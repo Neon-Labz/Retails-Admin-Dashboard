@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { SESSION_COOKIE, destroySessionByToken, clearSessionCookie } from "@/lib/auth";
-
-export const dynamic = "force-dynamic";
+import { sessionCookieOptions } from "@/lib/auth";
 
 export async function POST() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (token) {
-    await destroySessionByToken(token);
-  }
-  await clearSessionCookie();
-  return NextResponse.json({ message: "Logged out" });
+  const response = NextResponse.json({ success: true, message: "Logged out" });
+  response.cookies.set(sessionCookieOptions.name, "", { ...sessionCookieOptions, maxAge: 0 });
+  return response;
 }

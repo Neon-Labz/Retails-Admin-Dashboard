@@ -1,175 +1,133 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/db";
-import { Order, OrderItem, Product } from "@/db/schema";
-import { requireVerifiedUser, AuthError } from "@/lib/auth";
-import { checkoutSchema, formatZodError } from "@/lib/validation";
-import { generateOrderNumber } from "@/lib/utils";
-import { sendOrderConfirmationEmail } from "@/lib/email";
-import mongoose from "mongoose";
+import { NextRequest } from "next/server";
+import { connectDB } from "@/lib/db";
+import { Order } from "@/models/Order";
+import { Product } from "@/models/Product";
+import { Customer } from "@/models/Customer";
+import { Payment } from "@/models/Payment";
+import { createOrderSchema } from "@/lib/validators";
+import { apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
+import { getPaginationParams, buildPaginationMeta, generateOrderNumber, formatCurrency } from "@/lib/utils";
+import { notifyNewOrder, notifyLowStock } from "@/lib/notify";
 
-export const dynamic = "force-dynamic";
-
-const FREE_SHIPPING_THRESHOLD = 100;
-const STANDARD_SHIPPING_FEE = 9.99;
-const BULK_DISCOUNT_THRESHOLD = 300;
-const BULK_DISCOUNT_RATE = 0.05;
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const user = await requireVerifiedUser();
     await connectDB();
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search") || "";
+    const status = searchParams.get("status") || "";
+    const paymentStatus = searchParams.get("paymentStatus") || "";
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
+    const dateFrom = searchParams.get("dateFrom");
+    const dateTo = searchParams.get("dateTo");
+    const { page, limit, skip } = getPaginationParams(searchParams);
 
-    const orders = await Order.find({ userId: user.id }).sort({ createdAt: -1 }).lean();
-
-    const result = await Promise.all(
-      orders.map(async (order: any) => {
-        const itemCount = await OrderItem.countDocuments({ orderId: order._id });
-        return {
-          id: order._id.toString(),
-          orderNumber: order.orderNumber,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
-          total: order.total,
-          currency: order.currency,
-          createdAt: order.createdAt,
-          itemCount,
-        };
-      }),
-    );
-
-    return NextResponse.json({ orders: result });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+    const filter: Record<string, unknown> = {};
+    if (search) {
+      filter.$or = [
+        { orderNumber: { $regex: search, $options: "i" } },
+        { "customerSnapshot.name": { $regex: search, $options: "i" } },
+        { "customerSnapshot.email": { $regex: search, $options: "i" } },
+      ];
     }
-    console.error("[orders:list] error", error);
-    return NextResponse.json({ error: "Failed to load orders" }, { status: 500 });
+    if (status) filter.status = status;
+    if (paymentStatus) filter.paymentStatus = paymentStatus;
+    if (dateFrom || dateTo) {
+      const range: Record<string, Date> = {};
+      if (dateFrom) range.$gte = new Date(dateFrom);
+      if (dateTo) range.$lte = new Date(dateTo);
+      filter.createdAt = range;
+    }
+
+    const [orders, total] = await Promise.all([
+      Order.find(filter)
+        .sort({ [sortBy]: sortDir })
+        .skip(skip)
+        .limit(limit),
+      Order.countDocuments(filter),
+    ]);
+
+    return apiSuccess({ orders, meta: buildPaginationMeta(total, page, limit) });
+  } catch (err) {
+    return handleApiError(err);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireVerifiedUser();
-    const body = await request.json();
-    const parsed = checkoutSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: formatZodError(parsed.error) }, { status: 400 });
-    }
-
-    const { items, billingAddress, shippingAddress, paymentMethod, notes, sameAsBilling } = parsed.data;
-    const finalShippingAddress = sameAsBilling ? billingAddress : shippingAddress;
-
-    const toAddressRecord = (addr: typeof billingAddress): Record<string, string> => ({
-      label: addr.label,
-      fullName: addr.fullName,
-      phone: addr.phone,
-      line1: addr.line1,
-      line2: addr.line2 || "",
-      city: addr.city,
-      state: addr.state,
-      postalCode: addr.postalCode,
-      country: addr.country,
-    });
-
     await connectDB();
+    const body = await request.json();
+    const data = createOrderSchema.parse(body);
 
-    const productIds = items.map((item) => new mongoose.Types.ObjectId(item.productId));
-    const dbProducts = await Product.find({ _id: { $in: productIds } }).lean();
-    const productMap = new Map(dbProducts.map((p: any) => [p._id.toString(), p]));
+    const customer = await Customer.findById(data.customerId);
+    if (!customer) return apiError("Customer not found", 404);
 
-    const lineItems: {
-      productId: string;
-      name: string;
-      image: string | null;
-      price: number;
-      quantity: number;
-      lineTotal: number;
-    }[] = [];
-
-    for (const item of items) {
-      const product = productMap.get(item.productId) as any;
-      if (!product || !product.isActive) {
-        return NextResponse.json({ error: "One of the products in your cart is no longer available." }, { status: 400 });
-      }
+    let subtotal = 0;
+    const items = [];
+    for (const item of data.items) {
+      const product = await Product.findById(item.productId);
+      if (!product) return apiError(`Product not found: ${item.productId}`, 404);
       if (product.stock < item.quantity) {
-        return NextResponse.json(
-          { error: `Only ${product.stock} unit(s) of "${product.name}" left in stock.` },
-          { status: 409 },
-        );
+        return apiError(`Insufficient stock for ${product.name}. Available: ${product.stock}`, 400);
       }
-      const price = Number(product.price);
-      lineItems.push({
-        productId: product._id.toString(),
+      const lineSubtotal = (product.salePrice ?? product.price) * item.quantity;
+      subtotal += lineSubtotal;
+      items.push({
+        product: product._id,
         name: product.name,
-        image: product.images?.[0] ?? null,
-        price,
+        image: product.images?.[0] || "",
+        sku: product.sku,
+        price: product.salePrice ?? product.price,
         quantity: item.quantity,
-        lineTotal: Number((price * item.quantity).toFixed(2)),
+        subtotal: lineSubtotal,
       });
+
+      product.stock -= item.quantity;
+      product.totalSold = (product.totalSold || 0) + item.quantity;
+      await product.save();
+      if (product.stock <= product.lowStockThreshold) {
+        await notifyLowStock({ _id: product._id, name: product.name, stock: product.stock });
+      }
     }
 
-    const subtotal = Number(lineItems.reduce((sum, item) => sum + item.lineTotal, 0).toFixed(2));
-    const discount = subtotal >= BULK_DISCOUNT_THRESHOLD ? Number((subtotal * BULK_DISCOUNT_RATE).toFixed(2)) : 0;
-    const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
-    const tax = 0;
-    const total = Number((subtotal - discount + shippingFee + tax).toFixed(2));
-    const orderNumber = generateOrderNumber();
+    const total = subtotal - data.discount + data.shippingFee + data.tax;
+    const orderNumber = await generateOrderNumber();
 
     const order = await Order.create({
       orderNumber,
-      userId: user.id,
-      status: "pending",
-      paymentStatus: "unpaid",
-      paymentMethod,
-      subtotal: subtotal.toFixed(2),
-      discount: discount.toFixed(2),
-      shippingFee: shippingFee.toFixed(2),
-      tax: tax.toFixed(2),
-      total: total.toFixed(2),
-      billingAddress: toAddressRecord(billingAddress),
-      shippingAddress: toAddressRecord(finalShippingAddress!),
-      customerEmail: user.email,
-      customerName: user.name,
-      notes: notes || null,
+      customer: customer._id,
+      customerSnapshot: { name: customer.name, email: customer.email, phone: customer.phone },
+      items,
+      billingAddress: data.billingAddress,
+      shippingAddress: data.shippingAddress,
+      subtotal,
+      discount: data.discount,
+      shippingFee: data.shippingFee,
+      tax: data.tax,
+      total,
+      paymentMethod: data.paymentMethod,
+      notes: data.notes,
+      statusHistory: [{ status: "pending", changedAt: new Date(), note: "Order created" }],
     });
 
-    await OrderItem.insertMany(
-      lineItems.map((item) => ({
-        orderId: order._id,
-        productId: item.productId,
-        name: item.name,
-        image: item.image,
-        price: item.price.toFixed(2),
-        quantity: item.quantity,
-        lineTotal: item.lineTotal.toFixed(2),
-      })),
-    );
-
-    for (const item of lineItems) {
-      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.quantity } });
-    }
-
-    sendOrderConfirmationEmail({
-      to: user.email,
-      name: user.name,
+    await Payment.create({
+      order: order._id,
       orderNumber: order.orderNumber,
-      items: lineItems,
-      subtotal,
-      discount,
-      shippingFee,
-      tax,
-      total,
-      createdAt: order.createdAt,
-      paymentMethod,
-      shippingAddress: toAddressRecord(finalShippingAddress!),
-    }).catch((err) => console.error("[orders] failed to send confirmation email", err));
+      customer: customer._id,
+      amount: total,
+      method: data.paymentMethod,
+      status: data.paymentMethod === "cod" ? "pending" : "pending",
+      gateway: "manual",
+    });
 
-    return NextResponse.json({ order: { ...order.toObject(), id: order._id.toString() } }, { status: 201 });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-    console.error("[orders:create] error", error);
-    return NextResponse.json({ error: "Failed to place order. Please try again." }, { status: 500 });
+    customer.totalOrders = (customer.totalOrders || 0) + 1;
+    customer.totalSpent = (customer.totalSpent || 0) + total;
+    await customer.save();
+
+    await notifyNewOrder(order.orderNumber, formatCurrency(total));
+
+    return apiSuccess(order, "Order created successfully", 201);
+  } catch (err) {
+    return handleApiError(err);
   }
 }

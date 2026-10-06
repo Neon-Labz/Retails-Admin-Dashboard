@@ -1,32 +1,55 @@
-import { NextResponse } from "next/server";
-import { connectDB } from "@/db";
-import { Category, Product } from "@/db/schema";
+import { NextRequest } from "next/server";
+import { connectDB } from "@/lib/db";
+import { Category } from "@/models/Category";
+import { Product } from "@/models/Product";
+import { categorySchema } from "@/lib/validators";
+import { apiSuccess, handleApiError } from "@/lib/api-utils";
+import { slugify, getPaginationParams, buildPaginationMeta } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await connectDB();
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search") || "";
+    const all = searchParams.get("all") === "true";
+    const { page, limit, skip } = getPaginationParams(searchParams);
 
-    const categories = await Category.find().sort({ name: 1 }).lean();
+    const filter: Record<string, unknown> = {};
+    if (search) filter.name = { $regex: search, $options: "i" };
 
-    const result = await Promise.all(
-      categories.map(async (cat: any) => {
-        const productCount = await Product.countDocuments({ categoryId: cat._id, isActive: true });
-        return {
-          id: cat._id.toString(),
-          name: cat.name,
-          slug: cat.slug,
-          description: cat.description,
-          image: cat.image,
-          productCount,
-        };
-      }),
-    );
+    const query = Category.find(filter).sort({ createdAt: -1 });
+    const categories = all ? await query : await query.skip(skip).limit(limit);
+    const total = await Category.countDocuments(filter);
 
-    return NextResponse.json({ categories: result });
-  } catch (error) {
-    console.error("[categories] error", error);
-    return NextResponse.json({ error: "Failed to load categories" }, { status: 500 });
+    const counts = await Product.aggregate([{ $group: { _id: "$category", count: { $sum: 1 } } }]);
+    const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+    const data = categories.map((c) => ({
+      ...c.toObject(),
+      productCount: countMap.get(String(c._id)) || 0,
+    }));
+
+    return apiSuccess({ categories: data, meta: buildPaginationMeta(total, page, limit) });
+  } catch (err) {
+    return handleApiError(err);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    await connectDB();
+    const body = await request.json();
+    const data = categorySchema.parse(body);
+    const slug = slugify(data.name);
+
+    const existing = await Category.findOne({ slug });
+    if (existing) {
+      return handleApiError(new Error("A category with this name already exists"));
+    }
+
+    const category = await Category.create({ ...data, slug });
+    return apiSuccess(category, "Category created successfully", 201);
+  } catch (err) {
+    return handleApiError(err);
   }
 }

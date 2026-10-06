@@ -1,80 +1,66 @@
-export function formatCurrency(amount: number | string, currency = "USD") {
-  const value = typeof amount === "string" ? Number(amount) : amount;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-  }).format(Number.isFinite(value) ? value : 0);
+export function cn(...inputs: Array<string | false | null | undefined>): string {
+  return inputs.filter(Boolean).join(" ");
 }
 
-export function formatDate(date: Date | string) {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(d);
+export function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
-export function formatDateTime(date: Date | string) {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("en-US", {
+export function formatCurrency(amount: number, currency = "USD"): string {
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount || 0);
+  } catch {
+    return `$${(amount || 0).toFixed(2)}`;
+  }
+}
+
+export function formatDate(date: Date | string | undefined | null): string {
+  if (!date) return "-";
+  const d = new Date(date);
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+export function formatDateTime(date: Date | string | undefined | null): string {
+  if (!date) return "-";
+  const d = new Date(date);
+  return d.toLocaleString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(d);
+  });
 }
 
-export function slugify(input: string) {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
+export async function generateOrderNumber(): Promise<string> {
+  const date = new Date();
+  const y = date.getFullYear().toString().slice(-2);
+  const m = (date.getMonth() + 1).toString().padStart(2, "0");
+  const d = date.getDate().toString().padStart(2, "0");
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `ORD-${y}${m}${d}-${rand}`;
 }
 
-export function generateOrderNumber() {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).slice(2, 7).toUpperCase();
-  return `ORD-${timestamp}-${random}`;
+export function getPaginationParams(searchParams: URLSearchParams) {
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit")) || 10));
+  const skip = (page - 1) * limit;
+  return { page, limit, skip };
 }
 
-export function generateSku(prefix = "SKU") {
-  const random = Math.random().toString(36).slice(2, 9).toUpperCase();
-  return `${prefix}-${random}`;
-}
-
-export const ORDER_STATUSES = [
-  "pending",
-  "confirmed",
-  "processing",
-  "shipped",
-  "delivered",
-  "cancelled",
-] as const;
-
-export type OrderStatus = (typeof ORDER_STATUSES)[number];
-
-export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  processing: "Processing",
-  shipped: "Shipped",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-};
-
-export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  pending: "bg-amber-100 text-amber-800 border-amber-200",
-  confirmed: "bg-blue-100 text-blue-800 border-blue-200",
-  processing: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  shipped: "bg-purple-100 text-purple-800 border-purple-200",
-  delivered: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  cancelled: "bg-rose-100 text-rose-800 border-rose-200",
-};
-
-export function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
+export function buildPaginationMeta(total: number, page: number, limit: number) {
+  return {
+    total,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+    hasNextPage: page * limit < total,
+    hasPrevPage: page > 1,
+  };
 }

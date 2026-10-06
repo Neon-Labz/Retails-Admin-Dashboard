@@ -1,90 +1,67 @@
-import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/db";
-import { Product, Category } from "@/db/schema";
-import { productFilterSchema } from "@/lib/validation";
-
-export const dynamic = "force-dynamic";
+import { NextRequest } from "next/server";
+import { connectDB } from "@/lib/db";
+import { Product } from "@/models/Product";
+import { productSchema } from "@/lib/validators";
+import { apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
+import { slugify, getPaginationParams, buildPaginationMeta } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
-    const parsed = productFilterSchema.safeParse(searchParams);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid filters" }, { status: 400 });
-    }
-
-    const { search, category, minPrice, maxPrice, sort, featured, inStock } = parsed.data;
-    const page = parsed.data.page ?? 1;
-    const limit = parsed.data.limit ?? 12;
-
     await connectDB();
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search") || "";
+    const category = searchParams.get("category") || "";
+    const status = searchParams.get("status") || "";
+    const stockFilter = searchParams.get("stockFilter") || ""; // low | out
+    const sortBy = searchParams.get("sortBy") || "createdAt";
+    const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
+    const { page, limit, skip } = getPaginationParams(searchParams);
 
-    const filter: Record<string, any> = { isActive: true };
-
+    const filter: Record<string, unknown> = {};
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { brand: { $regex: search, $options: "i" } },
+        { sku: { $regex: search, $options: "i" } },
       ];
     }
-
-    if (minPrice !== undefined || maxPrice !== undefined) {
-      filter.price = {};
-      if (minPrice !== undefined) filter.price.$gte = String(minPrice);
-      if (maxPrice !== undefined) filter.price.$lte = String(maxPrice);
+    if (category) filter.category = category;
+    if (status) filter.status = status;
+    if (stockFilter === "out") filter.stock = { $lte: 0 };
+    if (stockFilter === "low") {
+      filter.$expr = { $and: [{ $gt: ["$stock", 0] }, { $lte: ["$stock", "$lowStockThreshold"] }] };
     }
 
-    if (featured) filter.featured = true;
-    if (inStock) filter.stock = { $gte: 1 };
-
-    if (category) {
-      const cat = await Category.findOne({ slug: category }).lean();
-      if (cat) filter.categoryId = (cat as any)._id;
-      else filter.categoryId = null;
-    }
-
-    let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
-    if (sort === "price_asc") sortOption = { price: 1 };
-    if (sort === "price_desc") sortOption = { price: -1 };
-    if (sort === "rating") sortOption = { rating: -1 };
-    if (sort === "popular") sortOption = { reviewCount: -1 };
-
-    const [rows, total] = await Promise.all([
+    const [products, total] = await Promise.all([
       Product.find(filter)
-        .sort(sortOption)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
+        .populate("category", "name slug")
+        .sort({ [sortBy]: sortDir })
+        .skip(skip)
+        .limit(limit),
       Product.countDocuments(filter),
     ]);
 
-    const categoryIds = rows.map((p: any) => p.categoryId).filter(Boolean);
-    const categoryRows = await Category.find({ _id: { $in: categoryIds } }).lean();
-    const categoryMap = new Map(categoryRows.map((c: any) => [c._id.toString(), c]));
-    const products = rows.map((p: any) => ({
-      id: p._id.toString(),
-      name: p.name,
-      slug: p.slug,
-      shortDescription: p.shortDescription,
-      price: p.price,
-      compareAtPrice: p.compareAtPrice,
-      images: p.images,
-      stock: p.stock,
-      rating: p.rating,
-      reviewCount: p.reviewCount,
-      featured: p.featured,
-      brand: p.brand,
-      categoryName: categoryMap.get(p.categoryId?.toString())?.name ?? null,
-      categorySlug: categoryMap.get(p.categoryId?.toString())?.slug ?? null,
-    }));
+    return apiSuccess({ products, meta: buildPaginationMeta(total, page, limit) });
+  } catch (err) {
+    return handleApiError(err);
+  }
+}
 
-    return NextResponse.json({
-      products,
-      pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
-    });
-  } catch (error) {
-    console.error("[products] error", error);
-    return NextResponse.json({ error: "Failed to load products" }, { status: 500 });
+export async function POST(request: NextRequest) {
+  try {
+    await connectDB();
+    const body = await request.json();
+    const data = productSchema.parse(body);
+
+    const existingSku = await Product.findOne({ sku: data.sku.toUpperCase() });
+    if (existingSku) return apiError("A product with this SKU already exists", 409);
+
+    let slug = slugify(data.name);
+    const slugExists = await Product.findOne({ slug });
+    if (slugExists) slug = `${slug}-${Date.now().toString().slice(-5)}`;
+
+    const product = await Product.create({ ...data, slug });
+    return apiSuccess(product, "Product created successfully", 201);
+  } catch (err) {
+    return handleApiError(err);
   }
 }
