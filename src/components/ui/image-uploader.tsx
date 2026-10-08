@@ -57,7 +57,6 @@ export function ImageUploader({
     <div>
       <div className="flex flex-wrap gap-3">
         {images.map((img, idx) => (
-          // eslint-disable-next-line @next/next/no-img-element
           <div key={img + idx} className="group relative h-24 w-24 overflow-hidden rounded-lg border border-slate-200">
             <img src={img} alt={`Product ${idx + 1}`} className="h-full w-full object-cover" />
             <button

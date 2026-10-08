@@ -15,6 +15,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { formatCurrency } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b",
@@ -45,7 +46,7 @@ export function SalesTrendChart({ data }: { data: { _id: string; sales: number; 
           contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }}
           formatter={(value, name) => {
             const num = typeof value === "number" ? value : Number(value || 0);
-            return [name === "sales" ? `$${num.toFixed(2)}` : num, name === "sales" ? "Sales" : "Orders"];
+            return [name === "sales" ? formatCurrency(num) : num, name === "sales" ? "Sales" : "Orders"];
           }}
         />
         <Area type="monotone" dataKey="sales" stroke="#6366f1" strokeWidth={2} fill="url(#colorSales)" />

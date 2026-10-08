@@ -6,11 +6,27 @@ export const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+export const subcategorySchema = z.object({
+  _id: z.string().optional(),
+  name: z.string().min(1, "Subcategory name is required"),
+  slug: z.string().optional(),
+  description: z.string().optional().default(""),
+});
+
 export const categorySchema = z.object({
   name: z.string().min(2, "Category name is required"),
   description: z.string().optional().default(""),
-  image: z.string().optional().default(""),
+  image: z.string().trim().min(1, "Category image is required"),
   isActive: z.boolean().optional().default(true),
+  subcategories: z
+    .array(
+      z.union([
+        z.string().min(1),
+        subcategorySchema,
+      ])
+    )
+    .optional()
+    .default([]),
 });
 
 export const specificationSchema = z.object({
@@ -19,17 +35,18 @@ export const specificationSchema = z.object({
 });
 
 export const productSchema = z.object({
-  name: z.string().min(2, "Product name is required"),
+  name: z.string().trim().min(1, "Product name is required"),
   description: z.string().optional().default(""),
   category: z.string().min(1, "Category is required"),
-  price: z.coerce.number().min(0, "Price must be a positive number"),
+  subcategory: z.string().trim().min(1, "Subcategory is required"),
+  price: z.coerce.number({ message: "Price is required" }).min(0, "Price must be a positive number"),
   salePrice: z.coerce.number().min(0).optional().nullable(),
-  sku: z.string().min(1, "SKU is required"),
-  images: z.array(z.string()).optional().default([]),
+  sku: z.string().trim().min(1, "SKU / Product code is required"),
+  images: z.array(z.string()).min(1, "Product image is required"),
   specifications: z.array(specificationSchema).optional().default([]),
-  stock: z.coerce.number().min(0).optional().default(0),
-  lowStockThreshold: z.coerce.number().min(0).optional().default(5),
-  status: z.enum(["active", "draft", "archived"]).optional().default("active"),
+  stock: z.coerce.number({ message: "Stock quantity is required" }).min(0, "Stock quantity must be 0 or more"),
+  lowStockThreshold: z.coerce.number({ message: "Low alert threshold is required" }).min(0, "Low alert threshold must be 0 or more"),
+  status: z.enum(["active", "draft", "archived"] as const, { message: "Status is required" }),
   isFeatured: z.boolean().optional().default(false),
 });
 
@@ -60,8 +77,8 @@ export const settingsSchema = z.object({
   storePhone: z.string().optional().default(""),
   storeAddress: z.string().optional().default(""),
   storeLogo: z.string().optional().default(""),
-  currency: z.string().optional().default("USD"),
-  currencySymbol: z.string().optional().default("$"),
+  currency: z.string().optional().default("LKR"),
+  currencySymbol: z.string().optional().default("LKR"),
   timezone: z.string().optional().default("UTC"),
   socialLinks: z
     .object({
