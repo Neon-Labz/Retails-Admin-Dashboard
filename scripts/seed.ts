@@ -48,8 +48,8 @@ async function main() {
         storeEmail: adminEmail,
         storePhone: "+1 555 0100",
         storeAddress: "123 Market Street, San Francisco, CA",
-        currency: "USD",
-        currencySymbol: "$",
+        currency: "LKR",
+        currencySymbol: "LKR",
       },
     },
     { upsert: true, new: true }

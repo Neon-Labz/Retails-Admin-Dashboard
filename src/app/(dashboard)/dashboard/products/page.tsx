@@ -627,7 +627,7 @@ export default function ProductsPage() {
                 required
                 value={form.price}
                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                placeholder="$0.00"
+                placeholder="LKR 0.00"
                 className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
               />
             </div>
@@ -640,7 +640,7 @@ export default function ProductsPage() {
                 step="0.01"
                 value={form.salePrice}
                 onChange={(e) => setForm((f) => ({ ...f, salePrice: e.target.value }))}
-                placeholder="$0.00"
+                placeholder="LKR 0.00"
                 className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
               />
             </div>

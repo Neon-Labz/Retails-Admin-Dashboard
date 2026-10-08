@@ -18,6 +18,10 @@ export async function getStoreSettings() {
   let settings = await Settings.findOne();
   if (!settings) {
     settings = await Settings.create({});
+  } else if (settings.currency === "USD" && settings.currencySymbol === "$") {
+    settings.currency = "LKR";
+    settings.currencySymbol = "LKR";
+    await settings.save();
   }
   return settings;
 }

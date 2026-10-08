@@ -12,11 +12,11 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-export function formatCurrency(amount: number, currency = "USD"): string {
+export function formatCurrency(amount: number, currency = "LKR"): string {
   try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount || 0);
+    return new Intl.NumberFormat("en-LK", { style: "currency", currency }).format(amount || 0);
   } catch {
-    return `$${(amount || 0).toFixed(2)}`;
+    return `LKR ${(amount || 0).toFixed(2)}`;
   }
 }
 

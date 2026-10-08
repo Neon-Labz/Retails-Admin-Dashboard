@@ -77,8 +77,8 @@ export const settingsSchema = z.object({
   storePhone: z.string().optional().default(""),
   storeAddress: z.string().optional().default(""),
   storeLogo: z.string().optional().default(""),
-  currency: z.string().optional().default("USD"),
-  currencySymbol: z.string().optional().default("$"),
+  currency: z.string().optional().default("LKR"),
+  currencySymbol: z.string().optional().default("LKR"),
   timezone: z.string().optional().default("UTC"),
   socialLinks: z
     .object({
