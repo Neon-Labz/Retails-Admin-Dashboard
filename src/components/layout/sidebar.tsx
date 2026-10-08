@@ -36,25 +36,30 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden" onClick={onClose} />}
+      {open && <div className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm lg:hidden" onClick={onClose} />}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-[272px] shrink-0 transform border-r border-slate-200 bg-white transition-transform duration-200 ease-in-out lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col border-r border-slate-800/80 bg-[#0B1120] text-slate-300 transition-transform duration-200 ease-in-out lg:static lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">
-              <Store className="h-5 w-5" />
+        <div className="flex h-16 items-center justify-between px-5">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-md shadow-slate-950/40">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/logo.png" alt="RKF Logo" className="h-full w-full object-contain scale-100" />
             </div>
-            <span className="text-lg font-bold text-slate-900">RetailAdmin</span>
+            <div className="flex flex-col">
+              <span className="text-base font-bold tracking-tight text-white leading-tight">RKF Admin</span>
+              <span className="text-[10px] font-medium text-slate-400 leading-tight">Retail & Logistics</span>
+            </div>
           </Link>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 lg:hidden">
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden">
             <X className="h-5 w-5" />
           </button>
         </div>
-        <nav className="flex h-[calc(100%-4rem)] flex-col gap-1 overflow-y-auto px-3 py-4 scrollbar-thin">
+
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-3 scrollbar-thin">
           {NAV_ITEMS.map((item) => {
             const active = item.href === "/dashboard" ? pathname === item.href : pathname?.startsWith(item.href);
             const Icon = item.icon;
@@ -64,16 +69,33 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
-                  active ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-150",
+                  active
+                    ? "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-600/30 font-semibold"
+                    : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-100"
                 )}
               >
-                <Icon className="h-[18px] w-[18px]" />
+                <Icon className={cn("h-[18px] w-[18px]", active ? "text-white" : "text-slate-400")} />
                 {item.label}
               </Link>
             );
           })}
         </nav>
+
+        <div className="mt-auto border-t border-slate-800/80 px-4 py-3.5">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-[10px] font-bold text-slate-300">
+                N
+              </span>
+              <span>v2.4.0 • Live</span>
+            </div>
+            <div className="flex items-center gap-1.5 font-medium text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Connected
+            </div>
+          </div>
+        </div>
       </aside>
     </>
   );

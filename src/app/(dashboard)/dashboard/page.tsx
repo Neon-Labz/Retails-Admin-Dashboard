@@ -85,43 +85,43 @@ export default async function DashboardOverviewPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard Overview</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
         <p className="mt-1 text-sm text-slate-500">A quick summary of your store&apos;s performance.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Sales" value={formatCurrency(totals.totalSales)} icon={<DollarSign className="h-4.5 w-4.5" />} color="emerald" />
         <StatCard label="Total Orders" value={totals.totalOrders} icon={<ShoppingCart className="h-4.5 w-4.5" />} color="indigo" />
         <StatCard label="Total Products" value={totals.totalProducts} icon={<Package className="h-4.5 w-4.5" />} color="sky" />
         <StatCard label="Total Customers" value={totals.totalCustomers} icon={<Users className="h-4.5 w-4.5" />} color="violet" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Pending Orders" value={totals.pendingOrders} icon={<Clock className="h-4.5 w-4.5" />} color="amber" />
         <StatCard label="Completed Orders" value={totals.completedOrders} icon={<CheckCircle2 className="h-4.5 w-4.5" />} color="emerald" />
         <StatCard label="Cancelled Orders" value={totals.cancelledOrders} icon={<Ban className="h-4.5 w-4.5" />} color="rose" />
-        <StatCard label="Available Stock" value={totals.availableStock} icon={<Boxes className="h-4.5 w-4.5" />} color="sky" />
+        <StatCard label="Available Stock" value={totals.availableStock} icon={<Boxes className="h-4.5 w-4.5" />} color="cyan" />
       </div>
 
       {(totals.lowStockProducts > 0 || totals.outOfStockProducts > 0) && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {totals.lowStockProducts > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-center gap-3 rounded-2xl border border-amber-200/90 bg-[#FFFBEB] px-5 py-4 text-sm text-amber-900 shadow-[0_2px_10px_rgba(245,158,11,0.05)]">
               <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
-              <p className="text-sm text-amber-800">
+              <p>
                 <strong>{totals.lowStockProducts}</strong> product(s) are running low on stock.{" "}
-                <Link href="/dashboard/stock" className="font-medium underline underline-offset-2">
+                <Link href="/dashboard/stock" className="font-semibold underline underline-offset-2 hover:text-amber-950">
                   Review stock
                 </Link>
               </p>
             </div>
           )}
           {totals.outOfStockProducts > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+            <div className="flex items-center gap-3 rounded-2xl border border-rose-200/90 bg-[#FFF1F2] px-5 py-4 text-sm text-rose-900 shadow-[0_2px_10px_rgba(244,63,94,0.05)]">
               <XCircle className="h-5 w-5 shrink-0 text-rose-500" />
-              <p className="text-sm text-rose-800">
+              <p>
                 <strong>{totals.outOfStockProducts}</strong> product(s) are out of stock.{" "}
-                <Link href="/dashboard/stock" className="font-medium underline underline-offset-2">
+                <Link href="/dashboard/stock" className="font-semibold underline underline-offset-2 hover:text-rose-950">
                   Restock now
                 </Link>
               </p>
@@ -131,12 +131,23 @@ export default async function DashboardOverviewPage() {
       )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <Card className="p-5 lg:col-span-2">
-          <h3 className="mb-4 text-sm font-semibold text-slate-700">Sales Trend (Last 14 days)</h3>
+        <Card className="p-6 lg:col-span-2">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-slate-900">Sales Trend (Last 14 days)</h3>
+            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+              <span className="h-2 w-2 rounded-full bg-indigo-600" />
+              <span>Daily Revenue</span>
+            </div>
+          </div>
           <SalesTrendChart data={stats.salesByDay} />
         </Card>
-        <Card className="p-5">
-          <h3 className="mb-4 text-sm font-semibold text-slate-700">Orders by Status</h3>
+        <Card className="p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-slate-900">Orders by Status</h3>
+            <button className="text-slate-400 hover:text-slate-600 transition-colors">
+              <span className="text-lg font-bold tracking-widest leading-none">•••</span>
+            </button>
+          </div>
           <OrderStatusPieChart data={stats.ordersByStatus} />
         </Card>
       </div>

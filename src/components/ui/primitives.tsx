@@ -159,7 +159,16 @@ export function Badge({ children, color = "slate" }: { children: ReactNode; colo
 
 /* ----------------------------------- Card ----------------------------------- */
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("rounded-2xl border border-slate-200 bg-white shadow-sm", className)}>{children}</div>;
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04),0_2px_6px_-1px_rgba(15,23,42,0.02)] transition-shadow duration-200",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 /* --------------------------------- StatCard --------------------------------- */
@@ -173,26 +182,28 @@ export function StatCard({
   label: string;
   value: string | number;
   icon: ReactNode;
-  color?: "indigo" | "emerald" | "rose" | "amber" | "sky" | "violet";
+  color?: "indigo" | "emerald" | "rose" | "amber" | "sky" | "violet" | "purple" | "cyan";
   trend?: string;
 }) {
   const colors: Record<string, string> = {
-    indigo: "bg-indigo-50 text-indigo-600",
-    emerald: "bg-emerald-50 text-emerald-600",
-    rose: "bg-rose-50 text-rose-600",
-    amber: "bg-amber-50 text-amber-600",
-    sky: "bg-sky-50 text-sky-600",
-    violet: "bg-violet-50 text-violet-600",
+    indigo: "bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE]",
+    emerald: "bg-[#ECFDF5] text-[#10B981] border border-[#A7F3D0]",
+    rose: "bg-[#FFF1F2] text-[#F43F5E] border border-[#FECDD3]",
+    amber: "bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A]",
+    sky: "bg-[#F0F9FF] text-[#0284C7] border border-[#BAE6FD]",
+    violet: "bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE]",
+    purple: "bg-[#FAF5FF] text-[#9333EA] border border-[#E9D5FF]",
+    cyan: "bg-[#ECFEFF] text-[#0891B2] border border-[#A5F3FC]",
   };
   return (
-    <Card className="p-5">
+    <div className="rounded-2xl border border-[#0F1E41]/35 bg-gradient-to-br from-[#E1ECFA] to-[#D4E4F7] p-6 shadow-[0_10px_25px_-4px_rgba(15,23,42,0.12),0_4px_10px_-2px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-4px_rgba(15,23,42,0.16)]">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-slate-500">{label}</p>
-        <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", colors[color])}>{icon}</div>
+        <p className="text-sm font-medium text-[#475569]">{label}</p>
+        <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl shadow-xs", colors[color])}>{icon}</div>
       </div>
-      <p className="mt-3 text-2xl font-semibold text-slate-900">{value}</p>
-      {trend && <p className="mt-1 text-xs text-slate-400">{trend}</p>}
-    </Card>
+      <p className="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-[#0B132B]">{value}</p>
+      {trend && <p className="mt-1.5 text-xs font-medium text-slate-500">{trend}</p>}
+    </div>
   );
 }
 
