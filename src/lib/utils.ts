@@ -64,3 +64,8 @@ export function buildPaginationMeta(total: number, page: number, limit: number) 
     hasPrevPage: page > 1,
   };
 }
+
+export function escapeRegex(text: string): string {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+}
+

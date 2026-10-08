@@ -62,8 +62,68 @@ export async function uploadFile(buffer: Buffer, filename: string, contentType: 
   return { url: `/uploads/${folder}/${localName}`, key: `local:${folder}/${localName}` };
 }
 
-export async function deleteFile(key: string): Promise<void> {
+/**
+ * Extracts the storage key from a local upload path, Cloudflare R2 URL, or raw key.
+ * Examples:
+ * - "/uploads/products/123.jpg" -> "local:products/123.jpg"
+ * - "https://pub-a517fd63737142cbb39ca30df8bc77f0.r2.dev/products/123.jpg" -> "products/123.jpg"
+ * - "https://...r2.cloudflarestorage.com/rkf/products/123.jpg" -> "products/123.jpg"
+ * - "products/123.jpg" -> "products/123.jpg"
+ */
+export function getKeyFromUrl(urlOrKey: string): string | null {
+  if (!urlOrKey || typeof urlOrKey !== "string") return null;
+  const str = urlOrKey.trim();
+  if (!str) return null;
+
+  if (str.startsWith("local:")) return str;
+
+  // Local uploads (/uploads/... or http://localhost.../uploads/...)
+  const localMatch = str.match(/(?:^|\/)uploads\/(.+)$/);
+  if (localMatch) {
+    return `local:${localMatch[1]}`;
+  }
+
+  // Already a relative key matching folder structure
+  if (/^(products|categories|heroes|teledramas|programs|store)\/[^/?#]+$/i.test(str)) {
+    return str;
+  }
+
+  // Check if configured R2_PUBLIC_URL prefix matches
+  if (R2_PUBLIC_URL && str.startsWith(R2_PUBLIC_URL.replace(/\/$/, ""))) {
+    const rel = str.slice(R2_PUBLIC_URL.replace(/\/$/, "").length).replace(/^\/+/, "");
+    if (rel) {
+      const cleanRel = rel.split("?")[0].split("#")[0];
+      return decodeURIComponent(cleanRel);
+    }
+  }
+
+  // Parse as URL if possible
+  try {
+    const parsed = new URL(str);
+    let pathname = decodeURIComponent(parsed.pathname).replace(/^\/+/, "");
+
+    // If pathname starts with bucket name (e.g. rkf/products/123.jpg)
+    if (R2_BUCKET_NAME && pathname.startsWith(`${R2_BUCKET_NAME}/`)) {
+      pathname = pathname.slice(R2_BUCKET_NAME.length + 1);
+    }
+
+    if (pathname) return pathname;
+  } catch {
+    // Relative path like "/products/123.jpg"
+    const cleaned = str.split("?")[0].split("#")[0].replace(/^\/+/, "");
+    if (/^(products|categories|heroes|teledramas|programs|store)\/.+/i.test(cleaned)) {
+      return cleaned;
+    }
+  }
+
+  return null;
+}
+
+export async function deleteFile(keyOrUrl: string): Promise<void> {
+  if (!keyOrUrl) return;
+  const key = getKeyFromUrl(keyOrUrl) || keyOrUrl;
   if (!key) return;
+
   if (key.startsWith("local:")) {
     const relative = key.replace("local:", "");
     const filePath = path.join(process.cwd(), "public", "uploads", relative);
@@ -74,11 +134,13 @@ export async function deleteFile(key: string): Promise<void> {
     }
     return;
   }
+
   if (isR2Configured) {
     try {
       await getClient().send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }));
-    } catch {
-      // ignore delete failures
+    } catch (err) {
+      console.warn(`[r2] Failed to delete object "${key}":`, (err as Error).message);
     }
   }
 }
+

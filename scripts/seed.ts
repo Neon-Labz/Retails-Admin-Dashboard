@@ -56,10 +56,39 @@ async function main() {
   );
 
   const categoryDefs = [
-    { name: "Electronics", description: "Phones, laptops, gadgets and accessories." },
-    { name: "Home & Kitchen", description: "Appliances and kitchenware for the home." },
-    { name: "Fashion", description: "Apparel, footwear and accessories." },
-    { name: "Sports & Outdoors", description: "Gear for fitness and outdoor activities." },
+    {
+      name: "Electronics",
+      description: "Phones, laptops, gadgets and accessories.",
+      subcategories: [
+        { name: "Audio", slug: "audio" },
+        { name: "Lighting", slug: "lighting" },
+        { name: "Cameras", slug: "cameras" },
+      ],
+    },
+    {
+      name: "Home & Kitchen",
+      description: "Appliances and kitchenware for the home.",
+      subcategories: [
+        { name: "Pots & Pans", slug: "pots-pans" },
+        { name: "Small Appliances", slug: "small-appliances" },
+      ],
+    },
+    {
+      name: "Fashion",
+      description: "Apparel, footwear and accessories.",
+      subcategories: [
+        { name: "Outerwear & Coats", slug: "outerwear-coats" },
+        { name: "Bags & Accessories", slug: "bags-accessories" },
+      ],
+    },
+    {
+      name: "Sports & Outdoors",
+      description: "Gear for fitness and outdoor activities.",
+      subcategories: [
+        { name: "Strength Training", slug: "strength-training" },
+        { name: "Yoga & Pilates", slug: "yoga-pilates" },
+      ],
+    },
   ];
 
   const categories = [];
@@ -67,21 +96,24 @@ async function main() {
     let category = await Category.findOne({ slug: slugify(def.name) });
     if (!category) {
       category = await Category.create({ ...def, slug: slugify(def.name) });
+    } else {
+      category.subcategories = def.subcategories as any;
+      await category.save();
     }
     categories.push(category);
   }
   console.log(`Ensured ${categories.length} categories.`);
 
   const productDefs = [
-    { name: "Wireless Bluetooth Headphones", category: 0, price: 79.99, salePrice: 59.99, sku: "ELEC-001", stock: 42, lowStockThreshold: 10 },
-    { name: "Smart LED Desk Lamp", category: 0, price: 34.5, salePrice: null, sku: "ELEC-002", stock: 4, lowStockThreshold: 8 },
-    { name: "4K Action Camera", category: 0, price: 129.0, salePrice: 99.0, sku: "ELEC-003", stock: 0, lowStockThreshold: 5 },
-    { name: "Stainless Steel Cookware Set", category: 1, price: 149.99, salePrice: null, sku: "HOME-001", stock: 18, lowStockThreshold: 5 },
-    { name: "Electric Kettle 1.7L", category: 1, price: 29.99, salePrice: 24.99, sku: "HOME-002", stock: 3, lowStockThreshold: 6 },
-    { name: "Men's Running Jacket", category: 2, price: 59.99, salePrice: null, sku: "FASH-001", stock: 25, lowStockThreshold: 10 },
-    { name: "Women's Leather Handbag", category: 2, price: 89.99, salePrice: 69.99, sku: "FASH-002", stock: 12, lowStockThreshold: 5 },
-    { name: "Yoga Mat Premium", category: 3, price: 24.99, salePrice: null, sku: "SPORT-001", stock: 60, lowStockThreshold: 15 },
-    { name: "Adjustable Dumbbell Set", category: 3, price: 199.99, salePrice: 179.99, sku: "SPORT-002", stock: 2, lowStockThreshold: 5 },
+    { name: "Wireless Bluetooth Headphones", category: 0, subcategory: "Audio", price: 79.99, salePrice: 59.99, sku: "ELEC-001", stock: 42, lowStockThreshold: 10 },
+    { name: "Smart LED Desk Lamp", category: 0, subcategory: "Lighting", price: 34.5, salePrice: null, sku: "ELEC-002", stock: 4, lowStockThreshold: 8 },
+    { name: "4K Action Camera", category: 0, subcategory: "Cameras", price: 129.0, salePrice: 99.0, sku: "ELEC-003", stock: 0, lowStockThreshold: 5 },
+    { name: "Stainless Steel Cookware Set", category: 1, subcategory: "Pots & Pans", price: 149.99, salePrice: null, sku: "HOME-001", stock: 18, lowStockThreshold: 5 },
+    { name: "Electric Kettle 1.7L", category: 1, subcategory: "Small Appliances", price: 29.99, salePrice: 24.99, sku: "HOME-002", stock: 3, lowStockThreshold: 6 },
+    { name: "Men's Running Jacket", category: 2, subcategory: "Outerwear & Coats", price: 59.99, salePrice: null, sku: "FASH-001", stock: 25, lowStockThreshold: 10 },
+    { name: "Women's Leather Handbag", category: 2, subcategory: "Bags & Accessories", price: 89.99, salePrice: 69.99, sku: "FASH-002", stock: 12, lowStockThreshold: 5 },
+    { name: "Yoga Mat Premium", category: 3, subcategory: "Yoga & Pilates", price: 24.99, salePrice: null, sku: "SPORT-001", stock: 60, lowStockThreshold: 15 },
+    { name: "Adjustable Dumbbell Set", category: 3, subcategory: "Strength Training", price: 199.99, salePrice: 179.99, sku: "SPORT-002", stock: 2, lowStockThreshold: 5 },
   ];
 
   const products = [];
@@ -93,6 +125,7 @@ async function main() {
         slug: slugify(def.name),
         description: `${def.name} — sourced from trusted bulk suppliers and quality checked before listing.`,
         category: categories[def.category]._id,
+        subcategory: def.subcategory,
         price: def.price,
         salePrice: def.salePrice,
         sku: def.sku,
@@ -103,6 +136,9 @@ async function main() {
         status: "active",
         isFeatured: Math.random() > 0.7,
       });
+    } else {
+      product.subcategory = def.subcategory;
+      await product.save();
     }
     products.push(product);
   }
