@@ -103,7 +103,7 @@ export default function CustomersPage() {
         key: "name",
         render: (c) => (
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold text-indigo-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#093B84]/10 text-sm font-semibold text-[#093B84]">
               {c.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -124,7 +124,7 @@ export default function CustomersPage() {
         key: "actions",
         render: (c) => (
           <div className="flex items-center gap-1">
-            <button onClick={() => openDetail(c)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600">
+            <button onClick={() => openDetail(c)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-[#093B84]">
               <Eye className="h-4 w-4" />
             </button>
             <button
@@ -164,7 +164,7 @@ export default function CustomersPage() {
                 key={opt.key}
                 onClick={() => { setStatusFilter(opt.key); setPage(1); }}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                  statusFilter === opt.key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  statusFilter === opt.key ? "bg-[#093B84] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
                 {opt.label}
@@ -183,7 +183,7 @@ export default function CustomersPage() {
         {detail && (
           <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 text-xl font-semibold text-indigo-600">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#093B84]/10 text-xl font-semibold text-[#093B84]">
                 {detail.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1">

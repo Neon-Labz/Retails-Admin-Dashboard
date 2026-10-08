@@ -151,7 +151,7 @@ export default function StockPage() {
                 key={opt.key}
                 onClick={() => { setStockFilter(opt.key); setPage(1); }}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                  stockFilter === opt.key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  stockFilter === opt.key ? "bg-[#093B84] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
                 {opt.label}

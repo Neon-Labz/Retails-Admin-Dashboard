@@ -243,7 +243,7 @@ export default function ProductsPage() {
         key: "actions",
         render: (p) => (
           <div className="flex items-center gap-1">
-            <button onClick={() => openEdit(p)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600">
+            <button onClick={() => openEdit(p)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-[#093B84]">
               <Pencil className="h-4 w-4" />
             </button>
             <button onClick={() => setDeleteTarget(p)} className="rounded-lg p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600">
@@ -283,7 +283,7 @@ export default function ProductsPage() {
             <select
               value={categoryFilter}
               onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#093B84]"
             >
               <option value="">All categories</option>
               {categories.map((c) => (
@@ -295,7 +295,7 @@ export default function ProductsPage() {
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#093B84]"
             >
               <option value="">All statuses</option>
               <option value="active">Active</option>
@@ -382,13 +382,13 @@ export default function ProductsPage() {
                     placeholder="Attribute (e.g. Color)"
                     value={spec.key}
                     onChange={(e) => updateSpec(idx, "key", e.target.value)}
-                    className="w-1/2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-indigo-500"
+                    className="w-1/2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-[#093B84]"
                   />
                   <input
                     placeholder="Value (e.g. Red)"
                     value={spec.value}
                     onChange={(e) => updateSpec(idx, "value", e.target.value)}
-                    className="w-1/2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-indigo-500"
+                    className="w-1/2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-[#093B84]"
                   />
                   <button
                     onClick={() => setForm((f) => ({ ...f, specifications: f.specifications.filter((_, i) => i !== idx) }))}

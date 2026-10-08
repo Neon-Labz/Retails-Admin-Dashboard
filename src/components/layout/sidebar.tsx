@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/customers", label: "Customers", icon: Users },
   { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  // { href: "/dashboard/settings", label: "Settings", icon: Settings },
   { href: "/dashboard/profile", label: "Admin Profile", icon: UserCircle },
 ];
 
@@ -39,7 +39,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       {open && <div className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm lg:hidden" onClick={onClose} />}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col border-r border-slate-800/80 bg-[#0B1120] text-slate-300 transition-transform duration-200 ease-in-out lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col border-r border-slate-800/80 bg-[#0B1120] text-slate-300 transition-transform duration-200 ease-in-out lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -51,7 +51,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
             </div>
             <div className="flex flex-col">
               <span className="text-base font-bold tracking-tight text-white leading-tight">RKF Admin</span>
-              <span className="text-[10px] font-medium text-slate-400 leading-tight">Retail & Logistics</span>
+              <span className="text-[10px] font-medium text-slate-400 leading-tight">Admin Panel</span>
             </div>
           </Link>
           <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden">
@@ -71,7 +71,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-150",
                   active
-                    ? "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-600/30 font-semibold"
+                    ? "bg-[#093B84] text-white shadow-md shadow-[#093B84]/35 font-semibold"
                     : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-100"
                 )}
               >

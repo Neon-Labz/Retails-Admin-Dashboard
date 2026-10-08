@@ -29,8 +29,8 @@ const SettingsSchema = new Schema<ISettings>(
     storePhone: { type: String, default: "" },
     storeAddress: { type: String, default: "" },
     storeLogo: { type: String, default: "" },
-    currency: { type: String, default: "USD" },
-    currencySymbol: { type: String, default: "$" },
+    currency: { type: String, default: "LKR" },
+    currencySymbol: { type: String, default: "Rs." },
     timezone: { type: String, default: "UTC" },
     socialLinks: {
       facebook: { type: String, default: "" },

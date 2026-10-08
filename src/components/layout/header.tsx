@@ -109,13 +109,13 @@ export function Header({ onMenuClick, admin }: HeaderProps) {
         <Link href="/dashboard/notifications" className="relative rounded-xl p-2 text-slate-500 hover:bg-slate-200/50 hover:text-slate-800 transition-colors">
           <Bell className="h-5 w-5" />
           {unread > 0 && (
-            <span className="absolute 1 top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-indigo-600 ring-2 ring-[#F4F6FA]" />
+            <span className="absolute 1 top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-[#093B84] ring-2 ring-[#F4F6FA]" />
           )}
         </Link>
         <div className="h-6 w-px bg-slate-200" />
         <div className="relative" ref={menuRef}>
           <button onClick={() => setMenuOpen((v) => !v)} className="flex items-center gap-2.5 rounded-xl p-1 hover:bg-slate-200/50 transition-colors">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-sm font-bold text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#093B84] to-[#072E66] text-sm font-bold text-white shadow-sm">
               {admin?.name?.charAt(0)?.toUpperCase() || "S"}
             </div>
             <div className="hidden text-left sm:block">
@@ -132,13 +132,13 @@ export function Header({ onMenuClick, admin }: HeaderProps) {
               >
                 <UserCircle className="h-4 w-4" /> Profile
               </Link>
-              <Link
+              {/* <Link
                 href="/dashboard/settings"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 font-medium"
               >
                 <Settings className="h-4 w-4" /> Settings
-              </Link>
+              </Link> */}
               <button
                 onClick={handleLogout}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 font-medium"
