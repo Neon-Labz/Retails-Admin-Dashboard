@@ -274,7 +274,6 @@ export default function CategoriesPage() {
         }
       >
         <div className="flex flex-col gap-5 py-1">
-          {/* 1. Category Name */}
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <label className="text-sm font-semibold text-slate-800">
@@ -291,7 +290,6 @@ export default function CategoriesPage() {
             />
           </div>
 
-          {/* 2. Subcategories */}
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <label className="text-sm font-semibold text-slate-800">Subcategories</label>
@@ -344,7 +342,6 @@ export default function CategoriesPage() {
             )}
           </div>
 
-          {/* 3. Category Image */}
           <ImageUpload
             label="Category Image"
             required
@@ -354,7 +351,6 @@ export default function CategoriesPage() {
             folder="categories"
           />
 
-          {/* 4. Active status */}
           <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
             <div>
               <div className="flex items-center">

@@ -35,7 +35,6 @@ export function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
 
-  // Sync / reset when external value changes
   const [prevValue, setPrevValue] = useState(value);
   if (value !== prevValue) {
     setPrevValue(value);
@@ -43,7 +42,6 @@ export function ImageUpload({
     setLoadFailed(false);
   }
 
-  // Clean up blob URLs when replaced or unmounted
   useEffect(() => {
     return () => {
       if (previewUrl && previewUrl.startsWith("blob:")) {

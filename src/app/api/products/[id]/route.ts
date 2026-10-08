@@ -46,7 +46,6 @@ export async function PUT(request: NextRequest, { params }: Params) {
       if (slugExists) slug = `${slug}-${Date.now().toString().slice(-5)}`;
     }
 
-    // Delete removed images from R2
     const removedImages = (current.images || []).filter((img) => !data.images.includes(img));
     for (const img of removedImages) {
       await deleteFile(img);
@@ -84,7 +83,6 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
     const product = await Product.findByIdAndDelete(id);
     if (!product) return apiError("Product not found", 404);
 
-    // Delete all images associated with this product from R2/storage
     const targetsToDelete = new Set<string>();
     for (const key of product.imageKeys || []) {
       if (key) targetsToDelete.add(key);

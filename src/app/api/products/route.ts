@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category") || "";
     const subcategory = searchParams.get("subcategory") || "";
     const status = searchParams.get("status") || "";
-    const stockFilter = searchParams.get("stockFilter") || ""; // low | out
+    const stockFilter = searchParams.get("stockFilter") || "";
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
     const { page, limit, skip } = getPaginationParams(searchParams);

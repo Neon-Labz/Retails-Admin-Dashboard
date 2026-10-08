@@ -473,7 +473,6 @@ export default function ProductsPage() {
         }
       >
         <div className="flex flex-col gap-4 py-1">
-          {/* Row 1: Product name & SKU */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <div className="mb-1.5 flex items-center justify-between">
@@ -523,7 +522,6 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Row 2: Description */}
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <label className="text-sm font-semibold text-slate-800">Description</label>
@@ -538,7 +536,6 @@ export default function ProductsPage() {
             />
           </div>
 
-          {/* Row 3: Product Image */}
           <ImageUpload
             label="Product Image"
             required
@@ -548,7 +545,6 @@ export default function ProductsPage() {
             folder="products"
           />
 
-          {/* Row 4: Category, Subcategory, Status */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-slate-800">
@@ -614,7 +610,6 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Row 5: Price, Sale price, Stock qty, Low alert */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-slate-800">
@@ -676,7 +671,6 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Row 6: Specifications */}
           <div>
             <div className="mb-2 flex items-center justify-between">
               <label className="text-sm font-semibold text-slate-800">Specifications</label>
@@ -716,7 +710,6 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Row 7: Mark as featured product */}
           <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
             <div>
               <div className="flex items-center">
