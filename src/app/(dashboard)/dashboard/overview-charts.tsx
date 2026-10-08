@@ -15,6 +15,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { formatCurrency } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b",

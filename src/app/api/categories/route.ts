@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import { Category } from "@/models/Category";
 import { Product } from "@/models/Product";
 import { categorySchema } from "@/lib/validators";
-import { apiSuccess, handleApiError } from "@/lib/api-utils";
+import { apiSuccess, apiError, handleApiError } from "@/lib/api-utils";
 import { slugify, getPaginationParams, buildPaginationMeta } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
@@ -44,10 +44,25 @@ export async function POST(request: NextRequest) {
 
     const existing = await Category.findOne({ slug });
     if (existing) {
-      return handleApiError(new Error("A category with this name already exists"));
+      return apiError("A category with this name already exists", 409);
     }
 
-    const category = await Category.create({ ...data, slug });
+    const rawSubcategories = data.subcategories || [];
+    const subcategories = rawSubcategories.map((sub) => {
+      if (typeof sub === "string") {
+        const trimmed = sub.trim();
+        return { name: trimmed, slug: slugify(trimmed) };
+      }
+      const trimmed = sub.name.trim();
+      return {
+        ...(sub._id ? { _id: sub._id } : {}),
+        name: trimmed,
+        slug: sub.slug ? slugify(sub.slug) : slugify(trimmed),
+        description: sub.description || "",
+      };
+    });
+
+    const category = await Category.create({ ...data, slug, subcategories });
     return apiSuccess(category, "Category created successfully", 201);
   } catch (err) {
     return handleApiError(err);

@@ -54,7 +54,6 @@ export async function uploadFile(buffer: Buffer, filename: string, contentType: 
     return { url: `${publicBase.replace(/\/$/, "")}/${key}`, key };
   }
 
-  // Local fallback
   const uploadsDir = path.join(process.cwd(), "public", "uploads", folder);
   await mkdir(uploadsDir, { recursive: true });
   const localName = `${Date.now()}-${randomUUID()}${ext}`;
@@ -62,23 +61,71 @@ export async function uploadFile(buffer: Buffer, filename: string, contentType: 
   return { url: `/uploads/${folder}/${localName}`, key: `local:${folder}/${localName}` };
 }
 
-export async function deleteFile(key: string): Promise<void> {
+export function getKeyFromUrl(urlOrKey: string): string | null {
+  if (!urlOrKey || typeof urlOrKey !== "string") return null;
+  const str = urlOrKey.trim();
+  if (!str) return null;
+
+  if (str.startsWith("local:")) return str;
+
+  const localMatch = str.match(/(?:^|\/)uploads\/(.+)$/);
+  if (localMatch) {
+    return `local:${localMatch[1]}`;
+  }
+
+  if (/^(products|categories|heroes|teledramas|programs|store)\/[^/?#]+$/i.test(str)) {
+    return str;
+  }
+
+  if (R2_PUBLIC_URL && str.startsWith(R2_PUBLIC_URL.replace(/\/$/, ""))) {
+    const rel = str.slice(R2_PUBLIC_URL.replace(/\/$/, "").length).replace(/^\/+/, "");
+    if (rel) {
+      const cleanRel = rel.split("?")[0].split("#")[0];
+      return decodeURIComponent(cleanRel);
+    }
+  }
+
+  try {
+    const parsed = new URL(str);
+    let pathname = decodeURIComponent(parsed.pathname).replace(/^\/+/, "");
+
+    if (R2_BUCKET_NAME && pathname.startsWith(`${R2_BUCKET_NAME}/`)) {
+      pathname = pathname.slice(R2_BUCKET_NAME.length + 1);
+    }
+
+    if (pathname) return pathname;
+  } catch {
+    const cleaned = str.split("?")[0].split("#")[0].replace(/^\/+/, "");
+    if (/^(products|categories|heroes|teledramas|programs|store)\/.+/i.test(cleaned)) {
+      return cleaned;
+    }
+  }
+
+  return null;
+}
+
+export async function deleteFile(keyOrUrl: string): Promise<void> {
+  if (!keyOrUrl) return;
+  const key = getKeyFromUrl(keyOrUrl) || keyOrUrl;
   if (!key) return;
+
   if (key.startsWith("local:")) {
     const relative = key.replace("local:", "");
     const filePath = path.join(process.cwd(), "public", "uploads", relative);
     try {
       await unlink(filePath);
     } catch {
-      // ignore missing file
+      // ignore
     }
     return;
   }
+
   if (isR2Configured) {
     try {
       await getClient().send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }));
-    } catch {
-      // ignore delete failures
+    } catch (err) {
+      console.warn(`[r2] Failed to delete object "${key}":`, (err as Error).message);
     }
   }
 }
+

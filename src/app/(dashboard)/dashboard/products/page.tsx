@@ -1,17 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Package, Star } from "lucide-react";
-import { Button, Badge, Card, Select, Input, Textarea, Switch } from "@/components/ui/primitives";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Package,
+  Star,
+  ChevronDown,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+import { Button, Badge, Card } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
 import { Modal, ConfirmDialog } from "@/components/ui/modal";
-import { ImageUploader } from "@/components/ui/image-uploader";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, cn } from "@/lib/utils";
+
+interface SubcategoryItem {
+  _id?: string;
+  name: string;
+  slug?: string;
+}
 
 interface Category {
   _id: string;
   name: string;
+  subcategories?: SubcategoryItem[];
 }
 
 interface Specification {
@@ -24,6 +40,7 @@ interface ProductRow {
   name: string;
   sku: string;
   category: { _id: string; name: string } | null;
+  subcategory?: string;
   price: number;
   salePrice?: number | null;
   stock: number;
@@ -40,11 +57,12 @@ const emptyForm = {
   name: "",
   description: "",
   category: "",
+  subcategory: "",
   price: "",
   salePrice: "",
   sku: "",
-  images: [] as string[],
-  specifications: [] as Specification[],
+  image: "",
+  specifications: [{ key: "", value: "" }] as Specification[],
   stock: "0",
   lowStockThreshold: "5",
   status: "active" as "active" | "draft" | "archived",
@@ -58,6 +76,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [subcategoryFilter, setSubcategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
@@ -81,6 +100,7 @@ export default function ProductsPage() {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (categoryFilter) params.set("category", categoryFilter);
+      if (subcategoryFilter) params.set("subcategory", subcategoryFilter);
       if (statusFilter) params.set("status", statusFilter);
       params.set("page", String(page));
       params.set("limit", "10");
@@ -93,7 +113,7 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, categoryFilter, statusFilter, page]);
+  }, [search, categoryFilter, subcategoryFilter, statusFilter, page]);
 
   useEffect(() => {
     loadCategories();
@@ -103,10 +123,48 @@ export default function ProductsPage() {
     loadProducts();
   }, [loadProducts]);
 
+  const filterSubcategories = useMemo(() => {
+    if (categoryFilter) {
+      const matched = categories.find((c) => c._id === categoryFilter);
+      return (matched?.subcategories || []).map((s) => s.name);
+    }
+    const allSubs = new Set<string>();
+    categories.forEach((c) => {
+      (c.subcategories || []).forEach((s) => {
+        if (s.name) allSubs.add(s.name);
+      });
+    });
+    return Array.from(allSubs);
+  }, [categoryFilter, categories]);
+
+  const formSubcategories = useMemo(() => {
+    if (!form.category) return [];
+    const matched = categories.find((c) => c._id === form.category);
+    return matched?.subcategories || [];
+  }, [form.category, categories]);
+
+  const [fetchingSku, setFetchingSku] = useState(false);
+
+  const fetchNextSku = useCallback(async () => {
+    setFetchingSku(true);
+    try {
+      const res = await fetch("/api/products/next-sku");
+      const json = await res.json();
+      if (json.success && json.data?.sku) {
+        setForm((f) => ({ ...f, sku: json.data.sku }));
+      }
+    } catch {
+      // ignore
+    } finally {
+      setFetchingSku(false);
+    }
+  }, []);
+
   function openCreate() {
     setEditing(null);
     setForm(emptyForm);
     setModalOpen(true);
+    fetchNextSku();
   }
 
   function openEdit(product: ProductRow) {
@@ -115,11 +173,15 @@ export default function ProductsPage() {
       name: product.name,
       description: product.description || "",
       category: product.category?._id || "",
+      subcategory: product.subcategory || "",
       price: String(product.price),
       salePrice: product.salePrice ? String(product.salePrice) : "",
       sku: product.sku,
-      images: product.images || [],
-      specifications: product.specifications || [],
+      image: product.images?.[0] || "",
+      specifications:
+        product.specifications && product.specifications.length > 0
+          ? product.specifications
+          : [{ key: "", value: "" }],
       stock: String(product.stock),
       lowStockThreshold: String(product.lowStockThreshold),
       status: product.status,
@@ -129,17 +191,55 @@ export default function ProductsPage() {
   }
 
   async function handleSave() {
+    if (!form.name.trim()) {
+      toast.error("Product name is required");
+      return;
+    }
+    if (!form.sku.trim()) {
+      toast.error("SKU / Product code is required");
+      return;
+    }
+    if (!form.image) {
+      toast.error("Product image is required");
+      return;
+    }
+    if (!form.category) {
+      toast.error("Category is required");
+      return;
+    }
+    if (!form.subcategory.trim()) {
+      toast.error("Subcategory is required");
+      return;
+    }
+    if (!form.status) {
+      toast.error("Status is required");
+      return;
+    }
+    if (form.price === "" || isNaN(Number(form.price)) || Number(form.price) < 0) {
+      toast.error("Valid price is required");
+      return;
+    }
+    if (form.stock === "" || isNaN(Number(form.stock)) || Number(form.stock) < 0) {
+      toast.error("Stock quantity is required");
+      return;
+    }
+    if (form.lowStockThreshold === "" || isNaN(Number(form.lowStockThreshold)) || Number(form.lowStockThreshold) < 0) {
+      toast.error("Low alert threshold is required");
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
-        name: form.name,
+        name: form.name.trim(),
         description: form.description,
         category: form.category,
+        subcategory: form.subcategory.trim(),
         price: Number(form.price),
         salePrice: form.salePrice ? Number(form.salePrice) : null,
-        sku: form.sku,
-        images: form.images,
-        specifications: form.specifications.filter((s) => s.key && s.value),
+        sku: form.sku.trim(),
+        images: form.image ? [form.image] : [],
+        specifications: form.specifications.filter((s) => s.key.trim() && s.value.trim()),
         stock: Number(form.stock),
         lowStockThreshold: Number(form.lowStockThreshold),
         status: form.status,
@@ -207,6 +307,7 @@ export default function ProductsPage() {
         ),
       },
       { header: "Category", key: "category", render: (p) => p.category?.name || "-" },
+      { header: "Subcategory", key: "subcategory", render: (p) => p.subcategory || "-" },
       {
         header: "Price",
         key: "price",
@@ -277,13 +378,25 @@ export default function ProductsPage() {
       </div>
 
       <Card className="p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name or SKU..." />
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchInput
+            className="flex-1 w-full"
+            value={search}
+            onChange={(v) => {
+              setSearch(v);
+              setPage(1);
+            }}
+            placeholder="Search by name or SKU..."
+          />
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <select
               value={categoryFilter}
-              onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#093B84]"
+onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setSubcategoryFilter("");
+                setPage(1);
+              }}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#093B84]"
             >
               <option value="">All categories</option>
               {categories.map((c) => (
@@ -293,9 +406,24 @@ export default function ProductsPage() {
               ))}
             </select>
             <select
+              value={subcategoryFilter}
+              onChange={(e) => {
+                setSubcategoryFilter(e.target.value);
+                setPage(1);
+              }}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#093B84]"
+            >
+              <option value="">All subcategories</option>
+              {filterSubcategories.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#093B84]"
+className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#093B84]"
             >
               <option value="">All statuses</option>
               <option value="active">Active</option>
@@ -317,82 +445,263 @@ export default function ProductsPage() {
         title={editing ? "Edit Product" : "Add Product"}
         size="lg"
         footer={
-          <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>
+          <div className="flex items-center justify-end gap-3 w-full">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="rounded-xl bg-slate-100 hover:bg-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition"
+            >
               Cancel
-            </Button>
-            <Button onClick={handleSave} loading={saving}>
-              {editing ? "Save changes" : "Create product"}
-            </Button>
-          </>
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-95 disabled:opacity-50"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : editing ? (
+                "Save changes"
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" /> Create product
+                </>
+              )}
+            </button>
+          </div>
         }
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 py-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-sm font-semibold text-slate-800">
+                  Product name <span className="text-indigo-600 font-bold">*</span>
+                </label>
+                <span className="text-xs text-slate-400 font-medium">Required</span>
+              </div>
+              <input
+                type="text"
+                required
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Adjustable Dumbbell Se"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+              />
+            </div>
+
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-sm font-semibold text-slate-800">
+                  SKU / Product code <span className="text-indigo-600 font-bold">*</span>
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-indigo-600 font-medium">Auto-generated</span>
+                </div>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  value={form.sku}
+                  onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
+                  placeholder="e.g. rkf-001"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-mono text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                />
+                <button
+                  type="button"
+                  onClick={fetchNextSku}
+                  title="Generate next sequence SKU"
+                  disabled={fetchingSku}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("h-4 w-4", fetchingSku && "animate-spin text-indigo-600")} />
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Product Images</label>
-            <ImageUploader images={form.images} onChange={(images) => setForm((f) => ({ ...f, images }))} />
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-sm font-semibold text-slate-800">Description</label>
+              <span className="text-xs text-slate-400 font-medium">Optional</span>
+            </div>
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder="Describe features, specs, and details..."
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs resize-none"
+            />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="Product name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
-            <Input label="SKU / Product code" value={form.sku} onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))} required />
-          </div>
-          <Textarea
-            label="Description"
-            rows={3}
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+
+          <ImageUpload
+            label="Product Image"
+            required
+            badge="Required"
+            value={form.image}
+            onChange={(url) => setForm((f) => ({ ...f, image: url }))}
+            folder="products"
           />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select label="Category" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required>
-              <option value="">Select category</option>
-              {categories.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
-            <Select label="Status" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as typeof form.status }))}>
-              <option value="active">Active</option>
-              <option value="draft">Draft</option>
-              <option value="archived">Archived</option>
-            </Select>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                Category <span className="text-indigo-600 font-bold">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  required
+                  value={form.category}
+                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subcategory: "" }))}
+                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                >
+                  <option value="">Select category</option>
+                  {categories.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                Subcategory <span className="text-indigo-600 font-bold">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  required
+                  value={form.subcategory}
+                  onChange={(e) => setForm((f) => ({ ...f, subcategory: e.target.value }))}
+                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                >
+                  <option value="">Select subcategory</option>
+                  {formSubcategories.map((s, idx) => (
+                    <option key={s._id || idx} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                Status <span className="text-indigo-600 font-bold">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  required
+                  value={form.status}
+                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as typeof form.status }))}
+                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs capitalize"
+                >
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Input label="Price" type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} required />
-            <Input label="Sale price" type="number" min="0" step="0.01" value={form.salePrice} onChange={(e) => setForm((f) => ({ ...f, salePrice: e.target.value }))} />
-            <Input label="Stock qty" type="number" min="0" value={form.stock} onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))} />
-            <Input label="Low stock alert" type="number" min="0" value={form.lowStockThreshold} onChange={(e) => setForm((f) => ({ ...f, lowStockThreshold: e.target.value }))} />
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                Price <span className="text-indigo-600 font-bold">*</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={form.price}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                placeholder="LKR 0.00"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-800">Sale price</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.salePrice}
+                onChange={(e) => setForm((f) => ({ ...f, salePrice: e.target.value }))}
+                placeholder="LKR 0.00"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                Stock qty <span className="text-indigo-600 font-bold">*</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={form.stock}
+                onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
+                placeholder="0"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
+                Low alert <span className="text-indigo-600 font-bold">*</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={form.lowStockThreshold}
+                onChange={(e) => setForm((f) => ({ ...f, lowStockThreshold: e.target.value }))}
+                placeholder="5"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+              />
+            </div>
           </div>
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="text-sm font-medium text-slate-700">Specifications</label>
-              <Button
-                variant="ghost"
-                size="sm"
+              <label className="text-sm font-semibold text-slate-800">Specifications</label>
+              <button
+                type="button"
                 onClick={() => setForm((f) => ({ ...f, specifications: [...f.specifications, { key: "", value: "" }] }))}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition flex items-center gap-1"
               >
-                <Plus className="h-3.5 w-3.5" /> Add spec
-              </Button>
+                + Add spec
+              </button>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               {form.specifications.map((spec, idx) => (
-                <div key={idx} className="flex gap-2">
+                <div key={idx} className="flex items-center gap-2.5">
                   <input
                     placeholder="Attribute (e.g. Color)"
                     value={spec.key}
                     onChange={(e) => updateSpec(idx, "key", e.target.value)}
-                    className="w-1/2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-[#093B84]"
+className="w-1/2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#093B84] focus:ring-1 focus:ring-[#093B84] transition shadow-xs"
                   />
                   <input
                     placeholder="Value (e.g. Red)"
                     value={spec.value}
                     onChange={(e) => updateSpec(idx, "value", e.target.value)}
-                    className="w-1/2 rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-[#093B84]"
+className="w-1/2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#093B84] focus:ring-1 focus:ring-[#093B84] transition shadow-xs"
                   />
                   <button
+                    type="button"
                     onClick={() => setForm((f) => ({ ...f, specifications: f.specifications.filter((_, i) => i !== idx) }))}
-                    className="rounded-lg px-2 text-slate-400 hover:text-rose-500"
+                    className="rounded-lg p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition"
+                    title="Remove specification"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -401,7 +710,36 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <Switch checked={form.isFeatured} onChange={(v) => setForm((f) => ({ ...f, isFeatured: v }))} label="Mark as featured product" />
+          <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
+            <div>
+              <div className="flex items-center">
+                <span className="text-sm font-semibold text-slate-800">Mark as featured product</span>
+                <span className="ml-2 inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600">
+                  Featured
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-400">
+                Highlight this product on the storefront homepage
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.isFeatured}
+              onClick={() => setForm((f) => ({ ...f, isFeatured: !f.isFeatured }))}
+              className={cn(
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                form.isFeatured ? "bg-indigo-600" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                  form.isFeatured ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
         </div>
       </Modal>
 

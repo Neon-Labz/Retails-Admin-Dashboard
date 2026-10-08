@@ -11,6 +11,7 @@ export interface IProduct extends Document {
   slug: string;
   description?: string;
   category: Types.ObjectId;
+  subcategory?: string;
   price: number;
   salePrice?: number | null;
   sku: string;
@@ -32,9 +33,10 @@ const ProductSchema = new Schema<IProduct>(
     slug: { type: String, required: true, unique: true, lowercase: true, index: true },
     description: { type: String, default: "" },
     category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
+    subcategory: { type: String, default: "", trim: true },
     price: { type: Number, required: true, min: 0 },
     salePrice: { type: Number, min: 0, default: null },
-    sku: { type: String, required: true, unique: true, uppercase: true, trim: true },
+    sku: { type: String, required: true, unique: true, trim: true },
     images: { type: [String], default: [] },
     imageKeys: { type: [String], default: [] },
     specifications: {
