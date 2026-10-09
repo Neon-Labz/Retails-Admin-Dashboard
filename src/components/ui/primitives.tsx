@@ -14,7 +14,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", loading, children, disabled, ...props }, ref) => {
     const variants: Record<string, string> = {
-      primary: "bg-[#093B84] text-white hover:bg-[#072E66] focus-visible:outline-[#093B84] shadow-sm",
+      primary: "bg-brand text-white hover:bg-brand-hover focus-visible:outline-brand shadow-sm",
       secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:outline-slate-400",
       danger: "bg-rose-600 text-white hover:bg-rose-700 focus-visible:outline-rose-600 shadow-sm",
       ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
@@ -64,7 +64,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ className, labe
         ref={ref}
         id={inputId}
         className={cn(
-          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#093B84] focus:ring-2 focus:ring-[#093B84]/20",
+          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20",
           error && "border-rose-400 focus:border-rose-500 focus:ring-rose-100",
           className
         )}
@@ -95,7 +95,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ classN
         ref={ref}
         id={inputId}
         className={cn(
-          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#093B84] focus:ring-2 focus:ring-[#093B84]/20",
+          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20",
           error && "border-rose-400",
           className
         )}
@@ -125,7 +125,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({ className, l
         ref={ref}
         id={inputId}
         className={cn(
-          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-[#093B84] focus:ring-2 focus:ring-[#093B84]/20",
+          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20",
           error && "border-rose-400",
           className
         )}
@@ -186,22 +186,22 @@ export function StatCard({
   trend?: string;
 }) {
   const colors: Record<string, string> = {
-    indigo: "bg-[#EEF2FF] text-[#093B84] border border-[#093B84]/20",
-    emerald: "bg-[#ECFDF5] text-[#10B981] border border-[#A7F3D0]",
-    rose: "bg-[#FFF1F2] text-[#F43F5E] border border-[#FECDD3]",
-    amber: "bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A]",
-    sky: "bg-[#F0F9FF] text-[#0284C7] border border-[#BAE6FD]",
-    violet: "bg-[#F5F3FF] text-[#7C3AED] border border-[#DDD6FE]",
-    purple: "bg-[#FAF5FF] text-[#9333EA] border border-[#E9D5FF]",
-    cyan: "bg-[#ECFEFF] text-[#0891B2] border border-[#A5F3FC]",
+    indigo: "bg-blue-50 text-brand border border-brand/20",
+    emerald: "bg-emerald-50 text-emerald-600 border border-emerald-200",
+    rose: "bg-rose-50 text-rose-600 border border-rose-200",
+    amber: "bg-amber-50 text-amber-600 border border-amber-200",
+    sky: "bg-sky-50 text-sky-600 border border-sky-200",
+    violet: "bg-violet-50 text-violet-600 border border-violet-200",
+    purple: "bg-purple-50 text-purple-600 border border-purple-200",
+    cyan: "bg-cyan-50 text-cyan-600 border border-cyan-200",
   };
   return (
-    <div className="rounded-2xl border border-[#0F1E41]/35 bg-gradient-to-br from-[#E1ECFA] to-[#D4E4F7] p-6 shadow-[0_10px_25px_-4px_rgba(15,23,42,0.12),0_4px_10px_-2px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-4px_rgba(15,23,42,0.16)]">
+    <div className="rounded-2xl metric-card-gradient p-6 shadow-[0_10px_25px_-4px_rgba(15,23,42,0.12),0_4px_10px_-2px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-4px_rgba(15,23,42,0.16)]">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-[#475569]">{label}</p>
+        <p className="text-sm font-medium text-slate-600">{label}</p>
         <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl shadow-xs", colors[color])}>{icon}</div>
       </div>
-      <p className="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-[#0B132B]">{value}</p>
+      <p className="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{value}</p>
       {trend && <p className="mt-1.5 text-xs font-medium text-slate-500">{trend}</p>}
     </div>
   );
@@ -209,7 +209,7 @@ export function StatCard({
 
 /* --------------------------------- Spinner ---------------------------------- */
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cn("h-5 w-5 animate-spin text-[#093B84]", className)} />;
+  return <Loader2 className={cn("h-5 w-5 animate-spin text-brand", className)} />;
 }
 
 export function LoadingState({ label = "Loading..." }: { label?: string }) {
@@ -261,7 +261,7 @@ export function Tabs({
           onClick={() => onChange(tab.key)}
           className={cn(
             "whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition",
-            active === tab.key ? "border-[#093B84] text-[#093B84]" : "border-transparent text-slate-500 hover:text-slate-700"
+            active === tab.key ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-slate-700"
           )}
         >
           {tab.label}
@@ -281,7 +281,7 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
         onClick={() => onChange(!checked)}
         className={cn(
           "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-          checked ? "bg-[#093B84]" : "bg-slate-300"
+          checked ? "bg-brand" : "bg-slate-300"
         )}
       >
         <span

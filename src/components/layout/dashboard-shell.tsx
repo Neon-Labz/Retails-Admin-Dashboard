@@ -14,7 +14,7 @@ export function DashboardShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F4F6FA]">
+    <div className="min-h-screen bg-brand-subtle">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex min-h-screen flex-1 flex-col lg:pl-[264px]">
         <Header onMenuClick={() => setSidebarOpen(true)} admin={admin} />

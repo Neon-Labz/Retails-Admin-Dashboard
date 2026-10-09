@@ -104,7 +104,7 @@ export function SalesTrendChart({
             Sales Trend <span className="text-xs font-normal text-slate-500">({rangeLabel})</span>
           </h3>
           <div className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-slate-400">
-            <span className="h-2 w-2 rounded-full bg-[#093B84]" />
+            <span className="h-2 w-2 rounded-full bg-brand" />
             <span>Daily Revenue</span>
           </div>
         </div>
@@ -124,7 +124,7 @@ export function SalesTrendChart({
               onClick={() => fetchRange(item.key)}
               className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
                 range === item.key
-                  ? "bg-[#093B84] text-white shadow-xs"
+                  ? "bg-brand text-white shadow-xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
@@ -141,13 +141,13 @@ export function SalesTrendChart({
           className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-2.5 border border-slate-200/80 text-xs"
         >
           <div className="flex items-center gap-1.5 text-slate-600">
-            <Calendar className="h-3.5 w-3.5 text-[#093B84]" />
+            <Calendar className="h-3.5 w-3.5 text-brand" />
             <span>From:</span>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs outline-none focus:border-[#093B84] focus:ring-1 focus:ring-[#093B84]"
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
           </div>
           <div className="flex items-center gap-1.5 text-slate-600">
@@ -156,13 +156,13 @@ export function SalesTrendChart({
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs outline-none focus:border-[#093B84] focus:ring-1 focus:ring-[#093B84]"
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-[#093B84] px-3 py-1 font-medium text-white transition hover:bg-[#072E66] disabled:opacity-50"
+            className="rounded-lg bg-brand px-3 py-1 font-medium text-white transition hover:bg-brand-hover disabled:opacity-50"
           >
             {loading ? "Loading..." : "Apply Range"}
           </button>
@@ -173,7 +173,7 @@ export function SalesTrendChart({
       <div className="relative min-h-[280px]">
         {loading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
-            <Loader2 className="h-6 w-6 animate-spin text-[#093B84]" />
+            <Loader2 className="h-6 w-6 animate-spin text-brand" />
           </div>
         )}
 
@@ -202,7 +202,7 @@ export function SalesTrendChart({
                 }}
                 formatter={(value, name) => {
                   const num = typeof value === "number" ? value : Number(value || 0);
-                  return [name === "sales" ? `Rs. ${num.toFixed(2)}` : num, name === "sales" ? "Sales" : "Orders"];
+                  return [name === "sales" ? formatCurrency(num) : num, name === "sales" ? "Sales" : "Orders"];
                 }}
               />
               <Area
@@ -319,7 +319,7 @@ export function StockHealthCard({ data }: { data: StockBreakdownData }) {
           </div>
           <Link
             href="/dashboard/stock"
-            className="flex items-center gap-1 text-xs font-semibold text-[#093B84] hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
           >
             Manage Stock <ArrowRight className="h-3 w-3" />
           </Link>
@@ -420,7 +420,7 @@ export function StockHealthCard({ data }: { data: StockBreakdownData }) {
 
                     <Link
                       href="/dashboard/stock"
-                      className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-[#093B84] hover:text-white transition-colors"
+                      className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-brand hover:text-white transition-colors"
                     >
                       Restock
                     </Link>

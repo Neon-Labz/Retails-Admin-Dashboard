@@ -30,7 +30,7 @@ const SettingsSchema = new Schema<ISettings>(
     storeAddress: { type: String, default: "" },
     storeLogo: { type: String, default: "" },
     currency: { type: String, default: "LKR" },
-    currencySymbol: { type: String, default: "Rs." },
+    currencySymbol: { type: String, default: "LKR" },
     timezone: { type: String, default: "UTC" },
     socialLinks: {
       facebook: { type: String, default: "" },

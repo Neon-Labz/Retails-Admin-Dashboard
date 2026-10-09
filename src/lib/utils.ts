@@ -18,9 +18,9 @@ export function formatCurrency(amount: number, currency = "LKR"): string {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-    return `Rs. ${formatted}`;
+    return `LKR ${formatted}`;
   } catch {
-    return `Rs. ${(amount || 0).toFixed(2)}`;
+    return `LKR ${(amount || 0).toFixed(2)}`;
   }
 }
 

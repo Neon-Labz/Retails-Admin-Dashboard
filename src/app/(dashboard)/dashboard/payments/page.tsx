@@ -118,7 +118,7 @@ export default function PaymentsPage() {
         header: "Actions",
         key: "actions",
         render: (p) => (
-          <button onClick={() => openDetail(p)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-[#093B84]">
+          <button onClick={() => openDetail(p)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-brand">
             <Eye className="h-4 w-4" />
           </button>
         ),
@@ -138,7 +138,7 @@ export default function PaymentsPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number..." />
           <div className="flex flex-wrap gap-2">
-            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#093B84]">
+            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand">
               <option value="">All statuses</option>
               {PAYMENT_RECORD_STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -146,7 +146,7 @@ export default function PaymentsPage() {
                 </option>
               ))}
             </select>
-            <select value={method} onChange={(e) => { setMethod(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#093B84]">
+            <select value={method} onChange={(e) => { setMethod(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand">
               <option value="">All methods</option>
               {PAYMENT_METHODS.map((m) => (
                 <option key={m} value={m}>
@@ -211,7 +211,7 @@ export default function PaymentsPage() {
                 value={transactionId}
                 onChange={(e) => setTransactionId(e.target.value)}
                 placeholder="e.g. txn_1234567890"
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#093B84] focus:ring-2 focus:ring-[#093B84]/20"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
             </div>
           </div>

@@ -120,7 +120,7 @@ export default function OrdersPage() {
         key: "orderNumber",
         render: (o) => (
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#093B84]/10 text-[#093B84]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand/10 text-brand">
               <ShoppingCart className="h-4 w-4" />
             </div>
             <div>
@@ -148,7 +148,7 @@ export default function OrdersPage() {
         header: "Actions",
         key: "actions",
         render: (o) => (
-          <button onClick={() => openDetail(o)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-[#093B84]">
+          <button onClick={() => openDetail(o)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-brand">
             <Eye className="h-4 w-4" />
           </button>
         ),
@@ -168,7 +168,7 @@ export default function OrdersPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number or customer..." />
           <div className="flex flex-wrap gap-2">
-            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#093B84]">
+            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand">
               <option value="">All statuses</option>
               {ORDER_STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -176,7 +176,7 @@ export default function OrdersPage() {
                 </option>
               ))}
             </select>
-            <select value={paymentStatus} onChange={(e) => { setPaymentStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#093B84]">
+            <select value={paymentStatus} onChange={(e) => { setPaymentStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand">
               <option value="">All payments</option>
               {PAYMENT_STATUSES.map((s) => (
                 <option key={s} value={s}>

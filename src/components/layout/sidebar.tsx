@@ -39,7 +39,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       {open && <div className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm lg:hidden" onClick={onClose} />}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col border-r border-slate-800/80 bg-[#0B1120] text-slate-300 transition-transform duration-200 ease-in-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-[264px] shrink-0 flex-col border-r border-slate-800/80 bg-brand-dark text-slate-300 transition-transform duration-200 ease-in-out lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -71,7 +71,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-150",
                   active
-                    ? "bg-[#093B84] text-white shadow-md shadow-[#093B84]/35 font-semibold"
+                    ? "bg-brand text-white shadow-md shadow-brand/35 font-semibold"
                     : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-100"
                 )}
               >

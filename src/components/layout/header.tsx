@@ -96,7 +96,7 @@ export function Header({ onMenuClick, admin }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200/70 bg-[#F4F6FA]/90 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200/70 bg-brand-subtle/90 px-4 backdrop-blur-md sm:px-6 lg:px-8">
       <div className="flex items-center gap-3">
         <button onClick={onMenuClick} className="rounded-lg p-2 text-slate-500 hover:bg-slate-200/60 lg:hidden">
           <Menu className="h-5 w-5" />
@@ -109,13 +109,13 @@ export function Header({ onMenuClick, admin }: HeaderProps) {
         <Link href="/dashboard/notifications" className="relative rounded-xl p-2 text-slate-500 hover:bg-slate-200/50 hover:text-slate-800 transition-colors">
           <Bell className="h-5 w-5" />
           {unread > 0 && (
-            <span className="absolute 1 top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-[#093B84] ring-2 ring-[#F4F6FA]" />
+            <span className="absolute 1 top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-brand ring-2 ring-brand-subtle" />
           )}
         </Link>
         <div className="h-6 w-px bg-slate-200" />
         <div className="relative" ref={menuRef}>
           <button onClick={() => setMenuOpen((v) => !v)} className="flex items-center gap-2.5 rounded-xl p-1 hover:bg-slate-200/50 transition-colors">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#093B84] to-[#072E66] text-sm font-bold text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-hover text-sm font-bold text-white shadow-sm">
               {admin?.name?.charAt(0)?.toUpperCase() || "S"}
             </div>
             <div className="hidden text-left sm:block">

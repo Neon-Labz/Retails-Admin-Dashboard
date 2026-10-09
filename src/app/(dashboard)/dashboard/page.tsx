@@ -107,7 +107,7 @@ export default async function DashboardOverviewPage() {
       {(totals.lowStockProducts > 0 || totals.outOfStockProducts > 0) && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {totals.lowStockProducts > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-amber-200/90 bg-[#FFFBEB] px-5 py-4 text-sm text-amber-900 shadow-[0_2px_10px_rgba(245,158,11,0.05)]">
+            <div className="flex items-center gap-3 rounded-2xl border border-amber-200/90 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-[0_2px_10px_rgba(245,158,11,0.05)]">
               <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
               <p>
                 <strong>{totals.lowStockProducts}</strong> product(s) are running low on stock.{" "}
@@ -118,7 +118,7 @@ export default async function DashboardOverviewPage() {
             </div>
           )}
           {totals.outOfStockProducts > 0 && (
-            <div className="flex items-center gap-3 rounded-2xl border border-rose-200/90 bg-[#FFF1F2] px-5 py-4 text-sm text-rose-900 shadow-[0_2px_10px_rgba(244,63,94,0.05)]">
+            <div className="flex items-center gap-3 rounded-2xl border border-rose-200/90 bg-rose-50 px-5 py-4 text-sm text-rose-900 shadow-[0_2px_10px_rgba(244,63,94,0.05)]">
               <XCircle className="h-5 w-5 shrink-0 text-rose-500" />
               <p>
                 <strong>{totals.outOfStockProducts}</strong> product(s) are out of stock.{" "}
@@ -150,7 +150,7 @@ export default async function DashboardOverviewPage() {
         <Card className="overflow-hidden lg:col-span-2">
           <div className="flex items-center justify-between border-b border-slate-100 p-5">
             <h3 className="text-sm font-semibold text-slate-700">Recent Orders</h3>
-            <Link href="/dashboard/orders" className="text-xs font-medium text-[#093B84] hover:underline">
+            <Link href="/dashboard/orders" className="text-xs font-medium text-brand hover:underline">
               View all
             </Link>
           </div>
@@ -190,7 +190,7 @@ export default async function DashboardOverviewPage() {
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-100 p-5">
             <h3 className="text-sm font-semibold text-slate-700">Recent Customers</h3>
-            <Link href="/dashboard/customers" className="text-xs font-medium text-[#093B84] hover:underline">
+            <Link href="/dashboard/customers" className="text-xs font-medium text-brand hover:underline">
               View all
             </Link>
           </div>
@@ -198,7 +198,7 @@ export default async function DashboardOverviewPage() {
             {stats.recentCustomers.length === 0 && <p className="px-5 py-8 text-center text-sm text-slate-400">No customers yet</p>}
             {stats.recentCustomers.map((c) => (
               <div key={c._id} className="flex items-center gap-3 px-5 py-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#093B84]/10 text-sm font-semibold text-[#093B84]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand/10 text-sm font-semibold text-brand">
                   {c.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
