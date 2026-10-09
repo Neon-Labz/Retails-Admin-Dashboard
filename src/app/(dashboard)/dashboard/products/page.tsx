@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus,
@@ -63,9 +64,9 @@ const emptyForm = {
   sku: "",
   image: "",
   specifications: [{ key: "", value: "" }] as Specification[],
-  stock: "0",
-  lowStockThreshold: "5",
-  status: "active" as "active" | "draft" | "archived",
+  stock: "",
+  lowStockThreshold: "",
+  status: "" as "active" | "draft" | "archived" | "",
   isFeatured: false,
 };
 
@@ -84,6 +85,17 @@ export default function ProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ProductRow | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  function clearFieldError(field: string) {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  }
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProductRow | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -163,12 +175,14 @@ export default function ProductsPage() {
   function openCreate() {
     setEditing(null);
     setForm(emptyForm);
+    setFieldErrors({});
     setModalOpen(true);
     fetchNextSku();
   }
 
   function openEdit(product: ProductRow) {
     setEditing(product);
+    setFieldErrors({});
     setForm({
       name: product.name,
       description: product.description || "",
@@ -191,40 +205,35 @@ export default function ProductsPage() {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) {
-      toast.error("Product name is required");
-      return;
+    const errs: Record<string, string> = {};
+    if (!form.name.trim()) errs.name = "Product name is required";
+    if (!form.sku.trim()) errs.sku = "SKU / Product code is required";
+    if (!form.image) errs.image = "Product image is required";
+    if (!form.category) errs.category = "Category is required";
+    if (!form.subcategory.trim()) errs.subcategory = "Subcategory is required";
+    if (!form.status) errs.status = "Status is required";
+
+    if (!form.price.trim()) {
+      errs.price = "Price is required";
+    } else if (isNaN(Number(form.price)) || Number(form.price) <= 0) {
+      errs.price = "Price must be greater than 0";
     }
-    if (!form.sku.trim()) {
-      toast.error("SKU / Product code is required");
-      return;
+    if (form.salePrice.trim() !== "" && (isNaN(Number(form.salePrice)) || Number(form.salePrice) < 0)) {
+      errs.salePrice = "Sale price must be a positive number";
     }
-    if (!form.image) {
-      toast.error("Product image is required");
-      return;
+    if (!form.stock.trim()) {
+      errs.stock = "Stock quantity is required";
+    } else if (isNaN(Number(form.stock)) || Number(form.stock) < 0) {
+      errs.stock = "Stock quantity must be 0 or more";
     }
-    if (!form.category) {
-      toast.error("Category is required");
-      return;
+    if (!form.lowStockThreshold.trim()) {
+      errs.lowStockThreshold = "Low alert threshold is required";
+    } else if (isNaN(Number(form.lowStockThreshold)) || Number(form.lowStockThreshold) < 0) {
+      errs.lowStockThreshold = "Low alert threshold must be 0 or more";
     }
-    if (!form.subcategory.trim()) {
-      toast.error("Subcategory is required");
-      return;
-    }
-    if (!form.status) {
-      toast.error("Status is required");
-      return;
-    }
-    if (form.price === "" || isNaN(Number(form.price)) || Number(form.price) < 0) {
-      toast.error("Valid price is required");
-      return;
-    }
-    if (form.stock === "" || isNaN(Number(form.stock)) || Number(form.stock) < 0) {
-      toast.error("Stock quantity is required");
-      return;
-    }
-    if (form.lowStockThreshold === "" || isNaN(Number(form.lowStockThreshold)) || Number(form.lowStockThreshold) < 0) {
-      toast.error("Low alert threshold is required");
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
       return;
     }
 
@@ -252,11 +261,29 @@ export default function ProductsPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
+        if (json.errors && typeof json.errors === "object") {
+          const backendFieldErrors: Record<string, string> = {};
+          for (const [key, val] of Object.entries(json.errors)) {
+            if (Array.isArray(val) && val[0]) {
+              backendFieldErrors[key] = String(val[0]);
+            } else if (typeof val === "string") {
+              backendFieldErrors[key] = val;
+            }
+          }
+          if (backendFieldErrors.images && !backendFieldErrors.image) {
+            backendFieldErrors.image = backendFieldErrors.images;
+          }
+          if (Object.keys(backendFieldErrors).length > 0) {
+            setFieldErrors(backendFieldErrors);
+            return;
+          }
+        }
         toast.error(json.message || "Failed to save product");
         return;
       }
       toast.success(editing ? "Product updated successfully" : "Product created successfully");
       setModalOpen(false);
+      setFieldErrors({});
       loadProducts();
     } finally {
       setSaving(false);
@@ -289,8 +316,7 @@ export default function ProductsPage() {
         render: (p) => (
           <div className="flex items-center gap-3">
             {p.images?.[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.images[0]} alt={p.name} className="h-10 w-10 rounded-lg border border-slate-200 object-cover" />
+              <Image src={p.images[0]} alt={p.name} width={40} height={40} unoptimized className="h-10 w-10 rounded-lg border border-slate-200 object-cover" />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
                 <Package className="h-5 w-5" />
@@ -441,7 +467,7 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
 
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setFieldErrors({}); }}
         title={editing ? "Edit Product" : "Add Product"}
         size="lg"
         footer={
@@ -476,49 +502,72 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-sm font-semibold text-slate-800">
-                  Product name <span className="text-indigo-600 font-bold">*</span>
+                <label className={cn("text-sm font-semibold", fieldErrors.name ? "text-rose-600" : "text-slate-800")}>
+                  Product name <span className="text-rose-500 font-bold">*</span>
                 </label>
-                <span className="text-xs text-slate-400 font-medium">Required</span>
               </div>
               <input
                 type="text"
                 required
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, name: e.target.value }));
+                  clearFieldError("name");
+                }}
                 placeholder="e.g. Adjustable Dumbbell Se"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                className={cn(
+                  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs",
+                  fieldErrors.name
+                    ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                    : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                )}
               />
+              {fieldErrors.name && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.name}
+                </p>
+              )}
             </div>
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-sm font-semibold text-slate-800">
-                  SKU / Product code <span className="text-indigo-600 font-bold">*</span>
+                <label className={cn("text-sm font-semibold", fieldErrors.sku ? "text-rose-600" : "text-slate-800")}>
+                  SKU / Product code <span className="text-rose-500 font-bold">*</span>
                 </label>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-indigo-600 font-medium">Auto-generated</span>
-                </div>
+                <span className="text-xs font-medium text-brand">Auto-generated</span>
               </div>
               <div className="relative">
                 <input
                   type="text"
                   required
                   value={form.sku}
-                  onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, sku: e.target.value }));
+                    clearFieldError("sku");
+                  }}
                   placeholder="e.g. rkf-001"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-10 text-sm font-mono text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                  className={cn(
+                    "w-full rounded-xl border bg-white px-3.5 py-2.5 pr-10 text-sm font-mono text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs",
+                    fieldErrors.sku
+                      ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                      : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                  )}
                 />
                 <button
                   type="button"
                   onClick={fetchNextSku}
                   title="Generate next sequence SKU"
                   disabled={fetchingSku}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition disabled:opacity-50"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 hover:text-brand hover:bg-slate-100 transition disabled:opacity-50"
                 >
-                  <RefreshCw className={cn("h-4 w-4", fetchingSku && "animate-spin text-indigo-600")} />
+                  <RefreshCw className={cn("h-4 w-4", fetchingSku && "animate-spin text-brand")} />
                 </button>
               </div>
+              {fieldErrors.sku && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.sku}
+                </p>
+              )}
             </div>
           </div>
 
@@ -536,26 +585,41 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
             />
           </div>
 
-          <ImageUpload
-            label="Product Image"
-            required
-            badge="Required"
-            value={form.image}
-            onChange={(url) => setForm((f) => ({ ...f, image: url }))}
-            folder="products"
-          />
+          <div>
+            <ImageUpload
+              label="Product Image"
+              required
+              value={form.image}
+              error={fieldErrors.image}
+              onChange={(url) => {
+                setForm((f) => ({ ...f, image: url }));
+                clearFieldError("image");
+              }}
+              folder="products"
+            />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                Category <span className="text-indigo-600 font-bold">*</span>
-              </label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className={cn("text-sm font-semibold", fieldErrors.category ? "text-rose-600" : "text-slate-800")}>
+                  Category <span className="text-rose-500 font-bold">*</span>
+                </label>
+              </div>
               <div className="relative">
                 <select
                   required
                   value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subcategory: "" }))}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, category: e.target.value, subcategory: "" }));
+                    clearFieldError("category");
+                  }}
+                  className={cn(
+                    "w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
+                    fieldErrors.category
+                      ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                      : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                  )}
                 >
                   <option value="">Select category</option>
                   {categories.map((c) => (
@@ -566,18 +630,33 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               </div>
+              {fieldErrors.category && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.category}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                Subcategory <span className="text-indigo-600 font-bold">*</span>
-              </label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className={cn("text-sm font-semibold", fieldErrors.subcategory ? "text-rose-600" : "text-slate-800")}>
+                  Subcategory <span className="text-rose-500 font-bold">*</span>
+                </label>
+              </div>
               <div className="relative">
                 <select
                   required
                   value={form.subcategory}
-                  onChange={(e) => setForm((f) => ({ ...f, subcategory: e.target.value }))}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, subcategory: e.target.value }));
+                    clearFieldError("subcategory");
+                  }}
+                  className={cn(
+                    "w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
+                    fieldErrors.subcategory
+                      ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                      : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                  )}
                 >
                   <option value="">Select subcategory</option>
                   {formSubcategories.map((s, idx) => (
@@ -588,86 +667,170 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               </div>
+              {fieldErrors.subcategory && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.subcategory}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                Status <span className="text-indigo-600 font-bold">*</span>
-              </label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className={cn("text-sm font-semibold", fieldErrors.status ? "text-rose-600" : "text-slate-800")}>
+                  Status <span className="text-rose-500 font-bold">*</span>
+                </label>
+              </div>
               <div className="relative">
                 <select
                   required
                   value={form.status}
-                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as typeof form.status }))}
-                  className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs capitalize"
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, status: e.target.value as typeof form.status }));
+                    clearFieldError("status");
+                  }}
+                  className={cn(
+                    "w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs capitalize",
+                    fieldErrors.status
+                      ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                      : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                  )}
                 >
+                  <option value="">Select status</option>
                   <option value="active">Active</option>
                   <option value="draft">Draft</option>
                   <option value="archived">Archived</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               </div>
+              {fieldErrors.status && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.status}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                Price <span className="text-indigo-600 font-bold">*</span>
-              </label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className={cn("text-sm font-semibold", fieldErrors.price ? "text-rose-600" : "text-slate-800")}>
+                  Price <span className="text-rose-500 font-bold">*</span>
+                </label>
+              </div>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 required
                 value={form.price}
-                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, price: e.target.value }));
+                  clearFieldError("price");
+                }}
                 placeholder="LKR 0.00"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                className={cn(
+                  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs",
+                  fieldErrors.price
+                    ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                    : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                )}
               />
+              {fieldErrors.price && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.price}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-800">Sale price</label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className={cn("text-sm font-semibold", fieldErrors.salePrice ? "text-rose-600" : "text-slate-800")}>
+                  Sale price
+                </label>
+                <span className="text-xs text-slate-400 font-medium">Optional</span>
+              </div>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={form.salePrice}
-                onChange={(e) => setForm((f) => ({ ...f, salePrice: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, salePrice: e.target.value }));
+                  clearFieldError("salePrice");
+                }}
                 placeholder="LKR 0.00"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                className={cn(
+                  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs",
+                  fieldErrors.salePrice
+                    ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                    : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                )}
               />
+              {fieldErrors.salePrice && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.salePrice}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                Stock qty <span className="text-indigo-600 font-bold">*</span>
-              </label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className={cn("text-sm font-semibold", fieldErrors.stock ? "text-rose-600" : "text-slate-800")}>
+                  Stock qty <span className="text-rose-500 font-bold">*</span>
+                </label>
+              </div>
               <input
                 type="number"
                 min="0"
                 required
                 value={form.stock}
-                onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, stock: e.target.value }));
+                  clearFieldError("stock");
+                }}
                 placeholder="0"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                className={cn(
+                  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs",
+                  fieldErrors.stock
+                    ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                    : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                )}
               />
+              {fieldErrors.stock && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.stock}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                Low alert <span className="text-indigo-600 font-bold">*</span>
-              </label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className={cn("text-sm font-semibold", fieldErrors.lowStockThreshold ? "text-rose-600" : "text-slate-800")}>
+                  Low alert <span className="text-rose-500 font-bold">*</span>
+                </label>
+              </div>
               <input
                 type="number"
                 min="0"
                 required
                 value={form.lowStockThreshold}
-                onChange={(e) => setForm((f) => ({ ...f, lowStockThreshold: e.target.value }))}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, lowStockThreshold: e.target.value }));
+                  clearFieldError("lowStockThreshold");
+                }}
                 placeholder="5"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+                className={cn(
+                  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs",
+                  fieldErrors.lowStockThreshold
+                    ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                    : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                )}
               />
+              {fieldErrors.lowStockThreshold && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.lowStockThreshold}
+                </p>
+              )}
             </div>
           </div>
 
@@ -728,13 +891,13 @@ className="w-1/2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-
               aria-checked={form.isFeatured}
               onClick={() => setForm((f) => ({ ...f, isFeatured: !f.isFeatured }))}
               className={cn(
-                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                form.isFeatured ? "bg-indigo-600" : "bg-slate-200"
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2",
+                form.isFeatured ? "bg-brand" : "bg-slate-300"
               )}
             >
               <span
                 className={cn(
-                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
                   form.isFeatured ? "translate-x-5" : "translate-x-0"
                 )}
               />

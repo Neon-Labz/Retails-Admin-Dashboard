@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { LoginForm } from "./login-form";
@@ -14,8 +15,7 @@ export default async function LoginPage() {
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg shadow-slate-200 border border-slate-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo.png" alt="RKF Logo" className="h-full w-full object-contain scale-125" />
+            <Image src="/images/logo.png" alt="RKF Logo" width={64} height={64} priority className="h-full w-full object-contain scale-125" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">RKF Admin</h1>

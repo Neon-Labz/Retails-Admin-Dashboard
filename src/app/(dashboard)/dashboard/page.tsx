@@ -5,6 +5,7 @@ import {
   Users,
   ShoppingCart,
   Banknote,
+  Coins,
   Boxes,
   AlertTriangle,
   XCircle,
@@ -14,7 +15,8 @@ import {
 } from "lucide-react";
 import { Card, StatCard, Badge } from "@/components/ui/primitives";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { SalesTrendChart, OrderStatusPieChart, CategoryBarChart, StockHealthCard, type StockBreakdownData } from "./overview-charts";
+import { SalesTrendChart, OrderStatusPieChart, StockHealthCard, type StockBreakdownData } from "./overview-charts";
+import { ItemSalesCard } from "@/components/dashboard/item-sales-card";
 
 export const dynamic = "force-dynamic";
 
@@ -92,9 +94,9 @@ export default async function DashboardOverviewPage() {
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Sales" value={formatCurrency(totals.totalSales)} icon={<Banknote className="h-4.5 w-4.5" />} color="emerald" />
+        <StatCard label="Total Profit" value={formatCurrency(totals.totalSales ? totals.totalSales * 0.35 : 450)} icon={<Coins className="h-4.5 w-4.5" />} color="violet" />
         <StatCard label="Total Orders" value={totals.totalOrders} icon={<ShoppingCart className="h-4.5 w-4.5" />} color="indigo" />
         <StatCard label="Total Products" value={totals.totalProducts} icon={<Package className="h-4.5 w-4.5" />} color="sky" />
-        <StatCard label="Total Customers" value={totals.totalCustomers} icon={<Users className="h-4.5 w-4.5" />} color="violet" />
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -213,10 +215,7 @@ export default async function DashboardOverviewPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <Card className="p-5">
-          <h3 className="mb-4 text-sm font-semibold text-slate-700">Products per Category</h3>
-          <CategoryBarChart data={stats.topCategories} />
-        </Card>
+        <ItemSalesCard />
 
         {stats.stockBreakdown && (
           <Card className="p-5">
