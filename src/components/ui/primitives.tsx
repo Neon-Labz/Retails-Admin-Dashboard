@@ -14,7 +14,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", loading, children, disabled, ...props }, ref) => {
     const variants: Record<string, string> = {
-      primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:outline-indigo-600 shadow-sm",
+      primary: "bg-brand text-white hover:bg-brand-hover focus-visible:outline-brand shadow-sm",
       secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:outline-slate-400",
       danger: "bg-rose-600 text-white hover:bg-rose-700 focus-visible:outline-rose-600 shadow-sm",
       ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
@@ -64,7 +64,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ className, labe
         ref={ref}
         id={inputId}
         className={cn(
-          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100",
+          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20",
           error && "border-rose-400 focus:border-rose-500 focus:ring-rose-100",
           className
         )}
@@ -95,7 +95,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({ classN
         ref={ref}
         id={inputId}
         className={cn(
-          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100",
+          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20",
           error && "border-rose-400",
           className
         )}
@@ -125,7 +125,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({ className, l
         ref={ref}
         id={inputId}
         className={cn(
-          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100",
+          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20",
           error && "border-rose-400",
           className
         )}
@@ -159,7 +159,16 @@ export function Badge({ children, color = "slate" }: { children: ReactNode; colo
 
 /* ----------------------------------- Card ----------------------------------- */
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("rounded-2xl border border-slate-200 bg-white shadow-sm", className)}>{children}</div>;
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04),0_2px_6px_-1px_rgba(15,23,42,0.02)] transition-shadow duration-200",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 /* --------------------------------- StatCard --------------------------------- */
@@ -173,32 +182,34 @@ export function StatCard({
   label: string;
   value: string | number;
   icon: ReactNode;
-  color?: "indigo" | "emerald" | "rose" | "amber" | "sky" | "violet";
+  color?: "indigo" | "emerald" | "rose" | "amber" | "sky" | "violet" | "purple" | "cyan";
   trend?: string;
 }) {
   const colors: Record<string, string> = {
-    indigo: "bg-indigo-50 text-indigo-600",
-    emerald: "bg-emerald-50 text-emerald-600",
-    rose: "bg-rose-50 text-rose-600",
-    amber: "bg-amber-50 text-amber-600",
-    sky: "bg-sky-50 text-sky-600",
-    violet: "bg-violet-50 text-violet-600",
+    indigo: "bg-blue-50 text-brand border border-brand/20",
+    emerald: "bg-emerald-50 text-emerald-600 border border-emerald-200",
+    rose: "bg-rose-50 text-rose-600 border border-rose-200",
+    amber: "bg-amber-50 text-amber-600 border border-amber-200",
+    sky: "bg-sky-50 text-sky-600 border border-sky-200",
+    violet: "bg-violet-50 text-violet-600 border border-violet-200",
+    purple: "bg-purple-50 text-purple-600 border border-purple-200",
+    cyan: "bg-cyan-50 text-cyan-600 border border-cyan-200",
   };
   return (
-    <Card className="p-5">
+    <div className="rounded-2xl metric-card-gradient p-6 shadow-[0_10px_25px_-4px_rgba(15,23,42,0.12),0_4px_10px_-2px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-4px_rgba(15,23,42,0.16)]">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-slate-500">{label}</p>
-        <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", colors[color])}>{icon}</div>
+        <p className="text-sm font-medium text-slate-600">{label}</p>
+        <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl shadow-xs", colors[color])}>{icon}</div>
       </div>
-      <p className="mt-3 text-2xl font-semibold text-slate-900">{value}</p>
-      {trend && <p className="mt-1 text-xs text-slate-400">{trend}</p>}
-    </Card>
+      <p className="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+      {trend && <p className="mt-1.5 text-xs font-medium text-slate-500">{trend}</p>}
+    </div>
   );
 }
 
 /* --------------------------------- Spinner ---------------------------------- */
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cn("h-5 w-5 animate-spin text-indigo-600", className)} />;
+  return <Loader2 className={cn("h-5 w-5 animate-spin text-brand", className)} />;
 }
 
 export function LoadingState({ label = "Loading..." }: { label?: string }) {
@@ -250,7 +261,7 @@ export function Tabs({
           onClick={() => onChange(tab.key)}
           className={cn(
             "whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition",
-            active === tab.key ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"
+            active === tab.key ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-slate-700"
           )}
         >
           {tab.label}
@@ -270,7 +281,7 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
         onClick={() => onChange(!checked)}
         className={cn(
           "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-          checked ? "bg-indigo-600" : "bg-slate-300"
+          checked ? "bg-brand" : "bg-slate-300"
         )}
       >
         <span

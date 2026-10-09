@@ -14,11 +14,11 @@ export function DashboardShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 lg:flex">
+    <div className="min-h-screen bg-brand-subtle">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex min-h-screen flex-1 flex-col lg:pl-0">
+      <div className="flex min-h-screen flex-1 flex-col lg:pl-[264px]">
         <Header onMenuClick={() => setSidebarOpen(true)} admin={admin} />
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

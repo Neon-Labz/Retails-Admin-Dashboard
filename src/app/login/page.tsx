@@ -13,12 +13,13 @@ export default async function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
-            <Store className="h-6 w-6" />
+          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg shadow-slate-200 border border-slate-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="RKF Logo" className="h-full w-full object-contain scale-125" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">RetailAdmin</h1>
-            <p className="text-sm text-slate-500">Sign in to manage your e-commerce store</p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">RKF Admin</h1>
+            <p className="text-sm text-slate-500">Sign in to manage your e-commerce & retail store</p>
           </div>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">

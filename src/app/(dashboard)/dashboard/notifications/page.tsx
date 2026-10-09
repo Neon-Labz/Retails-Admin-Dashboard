@@ -109,7 +109,7 @@ export default function NotificationsPage() {
             onClick={() => { setFilter(f); setPage(1); }}
             className={cn(
               "rounded-lg px-3.5 py-1.5 text-sm font-medium transition capitalize",
-              filter === f ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              filter === f ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             )}
           >
             {f}
@@ -127,8 +127,8 @@ export default function NotificationsPage() {
             {notifications.map((n) => {
               const Icon = ICONS[n.type] || Info;
               return (
-                <div key={n._id} className={cn("flex items-start gap-3 px-5 py-4", !n.isRead && "bg-indigo-50/40")}>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                <div key={n._id} className={cn("flex items-start gap-3 px-5 py-4", !n.isRead && "bg-brand/5")}>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
                     <Icon className="h-4.5 w-4.5" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -139,7 +139,7 @@ export default function NotificationsPage() {
                   <div className="flex shrink-0 items-center gap-1">
                     <button
                       onClick={() => toggleRead(n)}
-                      className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                      className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-brand hover:bg-brand/10"
                     >
                       {n.isRead ? "Mark unread" : "Mark read"}
                     </button>

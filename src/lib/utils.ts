@@ -14,7 +14,11 @@ export function slugify(text: string): string {
 
 export function formatCurrency(amount: number, currency = "LKR"): string {
   try {
-    return new Intl.NumberFormat("en-LK", { style: "currency", currency }).format(amount || 0);
+    const formatted = (amount || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return `LKR ${formatted}`;
   } catch {
     return `LKR ${(amount || 0).toFixed(2)}`;
   }

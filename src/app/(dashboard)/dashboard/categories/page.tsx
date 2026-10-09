@@ -206,7 +206,7 @@ export default function CategoriesPage() {
         key: "actions",
         render: (c) => (
           <div className="flex items-center gap-1">
-            <button onClick={() => openEdit(c)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600">
+            <button onClick={() => openEdit(c)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-brand">
               <Pencil className="h-4 w-4" />
             </button>
             <button onClick={() => setDeleteTarget(c)} className="rounded-lg p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600">

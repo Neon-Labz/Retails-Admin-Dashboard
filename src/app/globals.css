@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand: #093b84;
+  --color-brand-hover: #072e66;
+  --color-brand-active: #05214a;
+  --color-brand-light: #e8eef8;
+  --color-brand-subtle: #f4f6fa;
+  --color-brand-dark: #0b1120;
+  --color-indigo-500: #0d4ba1;
+  --color-indigo-600: #093b84;
+  --color-indigo-700: #072e66;
+}
+
 :root {
   --sidebar-width: 272px;
 }
@@ -56,3 +68,9 @@ body {
 .animate-modal-in {
   animation: modal-in 0.15s ease-out;
 }
+
+.metric-card-gradient {
+  background: linear-gradient(135deg, #e1ecfa 0%, #d4e4f7 100%);
+  border: 1px solid rgba(15, 30, 65, 0.35);
+}
+

@@ -344,7 +344,7 @@ export default function ProductsPage() {
         key: "actions",
         render: (p) => (
           <div className="flex items-center gap-1">
-            <button onClick={() => openEdit(p)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600">
+            <button onClick={() => openEdit(p)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-brand">
               <Pencil className="h-4 w-4" />
             </button>
             <button onClick={() => setDeleteTarget(p)} className="rounded-lg p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600">
@@ -391,12 +391,12 @@ export default function ProductsPage() {
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <select
               value={categoryFilter}
-              onChange={(e) => {
+onChange={(e) => {
                 setCategoryFilter(e.target.value);
                 setSubcategoryFilter("");
                 setPage(1);
               }}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-500"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
             >
               <option value="">All categories</option>
               {categories.map((c) => (
@@ -411,7 +411,7 @@ export default function ProductsPage() {
                 setSubcategoryFilter(e.target.value);
                 setPage(1);
               }}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-500"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
             >
               <option value="">All subcategories</option>
               {filterSubcategories.map((s) => (
@@ -423,7 +423,7 @@ export default function ProductsPage() {
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-500"
+className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
             >
               <option value="">All statuses</option>
               <option value="active">Active</option>
@@ -689,13 +689,13 @@ export default function ProductsPage() {
                     placeholder="Attribute (e.g. Color)"
                     value={spec.key}
                     onChange={(e) => updateSpec(idx, "key", e.target.value)}
-                    className="w-1/2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+className="w-1/2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition shadow-xs"
                   />
                   <input
                     placeholder="Value (e.g. Red)"
                     value={spec.value}
                     onChange={(e) => updateSpec(idx, "value", e.target.value)}
-                    className="w-1/2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
+className="w-1/2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition shadow-xs"
                   />
                   <button
                     type="button"
