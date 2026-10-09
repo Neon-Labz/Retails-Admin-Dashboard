@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus,
@@ -247,25 +246,6 @@ export default function ProductsPage() {
       errs.price = "Price is required";
     } else if (isNaN(Number(form.price)) || Number(form.price) <= 0) {
       errs.price = "Price must be greater than 0";
-    if (!form.name.trim()) {
-      toast.error("Product name is required");
-      return;
-    }
-    if (!form.sku.trim()) {
-      toast.error("SKU / Product code is required");
-      return;
-    }
-    if (!form.image) {
-      toast.error("Product image is required");
-      return;
-    }
-    if (!form.category) {
-      toast.error("Category is required");
-      return;
-    }
-    if (!form.status) {
-      toast.error("Status is required");
-      return;
     }
     if (form.salePrice.trim() !== "" && (isNaN(Number(form.salePrice)) || Number(form.salePrice) < 0)) {
       errs.salePrice = "Sale price must be a positive number";
@@ -896,13 +876,11 @@ export default function ProductsPage() {
                     clearFieldError("category");
                   }}
                   className={cn(
-                    "w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
+                    "peer w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
                     fieldErrors.category
                       ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
                       : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
                   )}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subcategory: "" }))}
-                  className="peer w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
                 >
                   <option value="">Select category</option>
                   {categories.map((c) => (
@@ -926,26 +904,22 @@ export default function ProductsPage() {
                   Subcategory <span className="text-rose-500 font-bold">*</span>
                 </label>
               </div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-800">
-                Subcategory <span className="text-slate-400 font-normal text-xs">(Optional)</span>
-              </label>
               <div className="relative">
                 <select
+                  required
                   value={form.subcategory}
                   onChange={(e) => {
                     setForm((f) => ({ ...f, subcategory: e.target.value }));
                     clearFieldError("subcategory");
                   }}
                   className={cn(
-                    "w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
+                    "peer w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
                     fieldErrors.subcategory
                       ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
                       : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
                   )}
-                  onChange={(e) => setForm((f) => ({ ...f, subcategory: e.target.value }))}
-                  className="peer w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs"
                 >
-                  <option value="">Select subcategory (optional)</option>
+                  <option value="">Select subcategory</option>
                   {formSubcategories.map((s, idx) => (
                     <option key={s._id || idx} value={s.name}>
                       {s.name}
@@ -976,16 +950,13 @@ export default function ProductsPage() {
                     clearFieldError("status");
                   }}
                   className={cn(
-                    "w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs capitalize",
+                    "peer w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs capitalize",
                     fieldErrors.status
                       ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
                       : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
                   )}
                 >
                   <option value="">Select status</option>
-                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as typeof form.status }))}
-                  className="peer w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-xs capitalize"
-                >
                   <option value="active">Active</option>
                   <option value="draft">Draft</option>
                   <option value="archived">Archived</option>
