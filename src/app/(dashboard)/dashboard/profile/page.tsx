@@ -89,10 +89,10 @@ export default function ProfilePage() {
   if (loading || !profile) return <LoadingState label="Loading profile..." />;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Admin Profile</h1>
-        <p className="mt-1 text-sm text-slate-500">Manage your personal account information and security.</p>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Admin Profile</h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Manage your personal account information and security.</p>
       </div>
 
       <Card className="p-6">

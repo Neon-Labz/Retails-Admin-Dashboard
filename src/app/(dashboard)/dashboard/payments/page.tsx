@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { CreditCard, Eye } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CreditCard, Eye, ChevronDown, Check, X } from "lucide-react";
 import { Button, Badge, Card, Select } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime, cn } from "@/lib/utils";
 import { PAYMENT_METHODS, PAYMENT_RECORD_STATUSES } from "@/lib/constants";
 
 interface PaymentRow {
@@ -36,12 +36,29 @@ export default function PaymentsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [method, setMethod] = useState("");
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+  const [methodMenuOpen, setMethodMenuOpen] = useState(false);
+  const methodMenuRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
   const [detail, setDetail] = useState<PaymentRow | null>(null);
   const [newStatus, setNewStatus] = useState("");
   const [transactionId, setTransactionId] = useState("");
   const [updating, setUpdating] = useState(false);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setStatusMenuOpen(false);
+      }
+      if (methodMenuRef.current && !methodMenuRef.current.contains(e.target as Node)) {
+        setMethodMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -128,32 +145,191 @@ export default function PaymentsPage() {
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Payments</h1>
-        <p className="mt-1 text-sm text-slate-500">Track payment status and transaction details for every order.</p>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Payments</h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Track payment status and transaction details for every order.</p>
       </div>
 
       <Card className="p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number..." />
-          <div className="flex flex-wrap gap-2">
-            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand">
-              <option value="">All statuses</option>
-              {PAYMENT_RECORD_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            <select value={method} onChange={(e) => { setMethod(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand">
-              <option value="">All methods</option>
-              {PAYMENT_METHODS.map((m) => (
-                <option key={m} value={m}>
-                  {m.replace("_", " ")}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchInput className="flex-1 w-full" value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number..." />
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {/* Status Filter */}
+            <div className="relative" ref={statusMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMethodMenuOpen(false);
+                  setStatusMenuOpen((v) => !v);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
+                  status
+                    ? "border-brand bg-brand-light/40 text-brand font-medium"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                )}
+                title="Filter by status"
+              >
+                <span className="capitalize">{status ? status : "All statuses"}</span>
+                {status ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setStatus("");
+                      setPage(1);
+                    }}
+                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
+                    title="Clear status filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    status ? "text-brand" : "text-slate-400",
+                    statusMenuOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {statusMenuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatus("");
+                      setPage(1);
+                      setStatusMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                      !status
+                        ? "bg-brand/10 text-brand font-semibold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <span>All statuses</span>
+                    {!status && <Check className="h-3.5 w-3.5 text-brand" />}
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <div className="max-h-56 overflow-y-auto space-y-0.5">
+                    {PAYMENT_RECORD_STATUSES.map((s) => {
+                      const isCurrent = status === s;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            setStatus(s);
+                            setPage(1);
+                            setStatusMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left capitalize transition cursor-pointer",
+                            isCurrent
+                              ? "bg-brand/10 text-brand font-semibold"
+                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                          )}
+                        >
+                          <span>{s}</span>
+                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Method Filter */}
+            <div className="relative" ref={methodMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusMenuOpen(false);
+                  setMethodMenuOpen((v) => !v);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
+                  method
+                    ? "border-brand bg-brand-light/40 text-brand font-medium"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                )}
+                title="Filter by payment method"
+              >
+                <span className="capitalize">{method ? method.replace("_", " ") : "All methods"}</span>
+                {method ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMethod("");
+                      setPage(1);
+                    }}
+                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
+                    title="Clear method filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    method ? "text-brand" : "text-slate-400",
+                    methodMenuOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {methodMenuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-48 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMethod("");
+                      setPage(1);
+                      setMethodMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                      !method
+                        ? "bg-brand/10 text-brand font-semibold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <span>All methods</span>
+                    {!method && <Check className="h-3.5 w-3.5 text-brand" />}
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <div className="max-h-56 overflow-y-auto space-y-0.5">
+                    {PAYMENT_METHODS.map((m) => {
+                      const isCurrent = method === m;
+                      return (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => {
+                            setMethod(m);
+                            setPage(1);
+                            setMethodMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left capitalize transition cursor-pointer",
+                            isCurrent
+                              ? "bg-brand/10 text-brand font-semibold"
+                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                          )}
+                        >
+                          <span>{m.replace("_", " ")}</span>
+                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Card>

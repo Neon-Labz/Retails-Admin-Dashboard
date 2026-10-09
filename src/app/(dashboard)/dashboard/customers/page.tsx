@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Eye, ShieldCheck, ShieldOff, UserRound } from "lucide-react";
 import { Button, Badge, Card, Switch } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
@@ -28,11 +29,15 @@ interface OrderSummary {
   createdAt: string;
 }
 
-export default function CustomersPage() {
+function CustomersContent() {
   const toast = useToast();
+  const searchParams = useSearchParams();
+  const querySearch = searchParams.get("search") || "";
+  const queryCustomerId = searchParams.get("customerId") || "";
+
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(querySearch);
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
@@ -40,6 +45,7 @@ export default function CustomersPage() {
   const [detail, setDetail] = useState<CustomerRow | null>(null);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const autoOpenedRef = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,6 +69,35 @@ export default function CustomersPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Auto-open customer modal if navigated with customerId or specific search
+  useEffect(() => {
+    if (queryCustomerId && !autoOpenedRef.current) {
+      autoOpenedRef.current = true;
+      (async () => {
+        setDetailLoading(true);
+        try {
+          const res = await fetch(`/api/customers/${queryCustomerId}`);
+          const json = await res.json();
+          if (json.success && json.data.customer) {
+            setDetail(json.data.customer);
+            setOrders(json.data.orders || []);
+          }
+        } catch {
+          /* ignore */
+        } finally {
+          setDetailLoading(false);
+        }
+      })();
+    }
+  }, [queryCustomerId]);
+
+  useEffect(() => {
+    if (!queryCustomerId && querySearch && !autoOpenedRef.current && customers.length > 0) {
+      autoOpenedRef.current = true;
+      openDetail(customers[0]);
+    }
+  }, [customers, queryCustomerId, querySearch]);
 
   async function openDetail(customer: CustomerRow) {
     setDetail(customer);
@@ -143,16 +178,16 @@ export default function CustomersPage() {
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Customers</h1>
-        <p className="mt-1 text-sm text-slate-500">View and manage registered customers.</p>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Customers</h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">View and manage registered customers.</p>
       </div>
 
       <Card className="p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name, email or phone..." />
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchInput className="flex-1 w-full" value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name, email or phone..." />
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {[
               { key: "", label: "All" },
               { key: "active", label: "Active" },
@@ -234,5 +269,13 @@ export default function CustomersPage() {
         )}
       </Modal>
     </div>
+  );
+}
+
+export default function CustomersPage() {
+  return (
+    <Suspense fallback={null}>
+      <CustomersContent />
+    </Suspense>
   );
 }

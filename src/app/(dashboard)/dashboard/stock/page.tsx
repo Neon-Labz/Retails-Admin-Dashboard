@@ -125,10 +125,10 @@ export default function StockPage() {
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Stock &amp; Inventory</h1>
-        <p className="mt-1 text-sm text-slate-500">Monitor stock levels and record inventory adjustments.</p>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Stock &amp; Inventory</h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Monitor stock levels and record inventory adjustments.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -138,9 +138,9 @@ export default function StockPage() {
       </div>
 
       <Card className="p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name or SKU..." />
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchInput className="flex-1 w-full" value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name or SKU..." />
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {[
               { key: "", label: "All" },
               { key: "low", label: "Low stock" },

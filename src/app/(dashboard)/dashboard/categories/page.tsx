@@ -220,13 +220,13 @@ export default function CategoriesPage() {
   );
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Categories</h1>
-          <p className="mt-1 text-sm text-slate-500">Organize your products into categories.</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Categories</h1>
+          <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Organize your products into categories.</p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="shrink-0">
           <Plus className="h-4 w-4" /> Add Category
         </Button>
       </div>

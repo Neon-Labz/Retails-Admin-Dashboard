@@ -170,7 +170,7 @@ export function ImageUpload({
           }`}
         >
           {loadFailed ? (
-            <div className="flex flex-col items-center gap-2 text-rose-500">
+            <div className="flex flex-col items-center gap-2 text-rose-500 py-1">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-500">
                 <ImageOff className="h-6 w-6" />
               </div>
@@ -180,6 +180,28 @@ export function ImageUpload({
               <span className="text-xs text-slate-400">
                 JPEG, PNG, WEBP, or GIF up to 5MB
               </span>
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    inputRef.current?.click();
+                  }}
+                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition shadow-xs"
+                >
+                  Upload New Image
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove();
+                  }}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition shadow-xs"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center">

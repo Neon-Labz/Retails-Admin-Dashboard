@@ -74,13 +74,13 @@ export default function SettingsPage() {
   if (loading || !settings) return <LoadingState label="Loading settings..." />;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Store &amp; System Settings</h1>
-          <p className="mt-1 text-sm text-slate-500">Configure your store information and operational preferences.</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Store &amp; System Settings</h1>
+          <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Configure your store information and operational preferences.</p>
         </div>
-        <Button onClick={handleSave} loading={saving}>
+        <Button onClick={handleSave} loading={saving} className="shrink-0">
           <Save className="h-4 w-4" /> Save changes
         </Button>
       </div>
