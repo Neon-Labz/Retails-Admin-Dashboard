@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, X, Loader2, ImageOff, UploadCloud } from "lucide-react";
 import { useToast } from "./toast";
@@ -105,8 +106,8 @@ export function ImageUpload({
     <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && (
         <div className="flex items-center justify-between">
-          <label className="text-sm font-semibold text-slate-800">
-            {label} {required && <span className="text-indigo-600 font-bold">*</span>}
+          <label className={`text-sm font-semibold ${error ? "text-rose-600" : "text-slate-800"}`}>
+            {label} {required && <span className="text-rose-500 font-bold">*</span>}
           </label>
           {badge && <span className="text-xs font-medium text-slate-400">{badge}</span>}
         </div>
@@ -114,10 +115,12 @@ export function ImageUpload({
 
       {displayUrl && !loadFailed ? (
         <div className="relative flex w-full items-center justify-center overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-50/50 p-2 shadow-xs transition-all">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={displayUrl}
             alt="Preview"
+            width={400}
+            height={300}
+            unoptimized
             className="max-h-72 w-auto max-w-full rounded-xl object-contain block transition-all"
             onError={() => setLoadFailed(true)}
           />
@@ -165,7 +168,7 @@ export function ImageUpload({
           }}
           className={`relative flex min-h-[10rem] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed transition p-6 text-center ${
             error
-              ? "border-red-400 bg-red-50/20"
+              ? "border-rose-400 bg-rose-50/20"
               : "border-indigo-100/90 bg-slate-50/40 hover:border-indigo-300 hover:bg-slate-50"
           }`}
         >
@@ -228,7 +231,7 @@ export function ImageUpload({
         }}
       />
 
-      {error && <p className="text-xs font-medium text-red-500">{error}</p>}
+      {error && <p className="text-xs font-medium text-rose-500">{error}</p>}
     </div>
   );
 }

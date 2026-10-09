@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, Tags, X, HelpCircle, Loader2 } from "lucide-react";
 import { Button, Badge, Card, Input, Textarea, Switch } from "@/components/ui/primitives";
@@ -47,7 +48,18 @@ export default function CategoriesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<CategoryRow | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [subInput, setSubInput] = useState("");
+
+  function clearFieldError(field: string) {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  }
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<CategoryRow | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -77,12 +89,14 @@ export default function CategoriesPage() {
   function openCreate() {
     setEditing(null);
     setForm(emptyForm);
+    setFieldErrors({});
     setSubInput("");
     setModalOpen(true);
   }
 
   function openEdit(category: CategoryRow) {
     setEditing(category);
+    setFieldErrors({});
     setForm({
       name: category.name,
       description: category.description || "",
@@ -119,14 +133,15 @@ export default function CategoriesPage() {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) {
-      toast.error("Category name is required");
+    const errs: Record<string, string> = {};
+    if (!form.name.trim()) errs.name = "Category name is required";
+    if (!form.image || !form.image.trim()) errs.image = "Category image is required";
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
       return;
     }
-    if (!form.image || !form.image.trim()) {
-      toast.error("Category image is required");
-      return;
-    }
+
     setSaving(true);
     try {
       const res = await fetch(editing ? `/api/categories/${editing._id}` : "/api/categories", {
@@ -136,11 +151,26 @@ export default function CategoriesPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
+        if (json.errors && typeof json.errors === "object") {
+          const backendFieldErrors: Record<string, string> = {};
+          for (const [key, val] of Object.entries(json.errors)) {
+            if (Array.isArray(val) && val[0]) {
+              backendFieldErrors[key] = String(val[0]);
+            } else if (typeof val === "string") {
+              backendFieldErrors[key] = val;
+            }
+          }
+          if (Object.keys(backendFieldErrors).length > 0) {
+            setFieldErrors(backendFieldErrors);
+            return;
+          }
+        }
         toast.error(json.message || "Failed to save category");
         return;
       }
       toast.success(editing ? "Category updated successfully" : "Category created successfully");
       setModalOpen(false);
+      setFieldErrors({});
       load();
     } finally {
       setSaving(false);
@@ -173,8 +203,7 @@ export default function CategoriesPage() {
         render: (c) => (
           <div className="flex items-center gap-3">
             {c.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={c.image} alt={c.name} className="h-10 w-10 rounded-lg border border-slate-200 object-cover" />
+              <Image src={c.image} alt={c.name} width={40} height={40} unoptimized className="h-10 w-10 rounded-lg border border-slate-200 object-cover" />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
                 <Tags className="h-5 w-5" />
@@ -247,7 +276,7 @@ export default function CategoriesPage() {
 
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setFieldErrors({}); }}
         title={editing ? "Edit Category" : "Add Category"}
         footer={
           <div className="flex items-center justify-end gap-3 w-full">
@@ -276,18 +305,30 @@ export default function CategoriesPage() {
         <div className="flex flex-col gap-5 py-1">
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <label className="text-sm font-semibold text-slate-800">
-                Category Name <span className="text-indigo-600 font-bold">*</span>
+              <label className={cn("text-sm font-semibold", fieldErrors.name ? "text-rose-600" : "text-slate-800")}>
+                Category Name <span className="text-rose-500 font-bold">*</span>
               </label>
-              <span className="text-xs text-slate-400 font-medium">Required</span>
             </div>
             <input
               value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, name: e.target.value }));
+                clearFieldError("name");
+              }}
               placeholder="e.g. Electronics"
               required
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              className={cn(
+                "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition shadow-xs",
+                fieldErrors.name
+                  ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                  : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+              )}
             />
+            {fieldErrors.name && (
+              <p className="mt-1.5 text-xs font-medium text-rose-500">
+                {fieldErrors.name}
+              </p>
+            )}
           </div>
 
           <div>
@@ -345,9 +386,12 @@ export default function CategoriesPage() {
           <ImageUpload
             label="Category Image"
             required
-            badge="Required"
             value={form.image}
-            onChange={(url) => setForm((f) => ({ ...f, image: url }))}
+            error={fieldErrors.image}
+            onChange={(url) => {
+              setForm((f) => ({ ...f, image: url }));
+              clearFieldError("image");
+            }}
             folder="categories"
           />
 
@@ -371,13 +415,13 @@ export default function CategoriesPage() {
               aria-checked={form.isActive}
               onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}
               className={cn(
-                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                form.isActive ? "bg-indigo-600" : "bg-slate-200"
+                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2",
+                form.isActive ? "bg-brand" : "bg-slate-300"
               )}
             >
               <span
                 className={cn(
-                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
                   form.isActive ? "translate-x-5" : "translate-x-0"
                 )}
               />

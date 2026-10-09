@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -46,8 +47,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         <div className="flex h-16 items-center justify-between px-5">
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-md shadow-slate-950/40">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/logo.png" alt="RKF Logo" className="h-full w-full object-contain scale-100" />
+              <Image src="/images/logo.png" alt="RKF Logo" width={40} height={40} priority className="h-full w-full object-contain scale-100" />
             </div>
             <div className="flex flex-col">
               <span className="text-base font-bold tracking-tight text-white leading-tight">RKF Admin</span>

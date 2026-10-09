@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       if (slugExists) slug = `${slug}-${Date.now().toString().slice(-5)}`;
     }
 
-    const removedImages = (current.images || []).filter((img) => !data.images.includes(img));
+    const removedImages = (current.images || []).filter((img) => !(data.images || []).includes(img));
     for (const img of removedImages) {
       await deleteFile(img);
     }

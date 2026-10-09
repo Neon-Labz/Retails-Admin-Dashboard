@@ -30,7 +30,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+          "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
           variants[variant],
           sizes[size],
           className
@@ -56,7 +56,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ className, labe
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-slate-700">
+        <label htmlFor={inputId} className={cn("text-sm font-medium", error ? "text-rose-600 font-semibold" : "text-slate-700")}>
           {label}
         </label>
       )}
@@ -165,7 +165,7 @@ export function Card({ children, className }: { children: ReactNode; className?:
   return (
     <div
       className={cn(
-        "rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04),0_2px_6px_-1px_rgba(15,23,42,0.02)] transition-shadow duration-200",
+        "rounded-2xl border border-slate-300 bg-white shadow-sm transition-shadow duration-200",
         className
       )}
     >
@@ -263,7 +263,7 @@ export function Tabs({
           key={tab.key}
           onClick={() => onChange(tab.key)}
           className={cn(
-            "whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition",
+            "whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition cursor-pointer",
             active === tab.key ? "border-brand text-brand" : "border-transparent text-slate-500 hover:text-slate-700"
           )}
         >
@@ -274,28 +274,46 @@ export function Tabs({
   );
 }
 
-export function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label?: string }) {
+export function Switch({
+  checked,
+  onChange,
+  label,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label?: string;
+  disabled?: boolean;
+}) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5">
+    <div className={cn("inline-flex shrink-0 items-center gap-3 select-none", disabled && "opacity-50")}>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
+        disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 disabled:cursor-not-allowed",
           checked ? "bg-brand" : "bg-slate-300"
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-            checked ? "translate-x-5" : "translate-x-0.5"
+            "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out",
+            checked ? "translate-x-5" : "translate-x-0"
           )}
         />
       </button>
-      {label && <span className="text-sm text-slate-700">{label}</span>}
-    </label>
+      {label && (
+        <span
+          onClick={() => !disabled && onChange(!checked)}
+          className={cn("text-sm font-medium text-slate-700", !disabled && "cursor-pointer hover:text-slate-900")}
+        >
+          {label}
+        </span>
+      )}
+    </div>
   );
 }
 

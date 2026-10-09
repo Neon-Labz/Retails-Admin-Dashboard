@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { ImagePlus, X, Loader2 } from "lucide-react";
 import { useToast } from "./toast";
@@ -58,7 +59,7 @@ export function ImageUploader({
       <div className="flex flex-wrap gap-3">
         {images.map((img, idx) => (
           <div key={img + idx} className="group relative h-24 w-24 overflow-hidden rounded-lg border border-slate-200">
-            <img src={img} alt={`Product ${idx + 1}`} className="h-full w-full object-cover" />
+            <Image src={img} alt={`Product ${idx + 1}`} width={96} height={96} unoptimized className="h-full w-full object-cover" />
             <button
               type="button"
               onClick={() => removeImage(idx)}

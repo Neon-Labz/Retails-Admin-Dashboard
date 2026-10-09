@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   AreaChart,
   Area,
@@ -395,8 +396,7 @@ export function StockHealthCard({ data }: { data: StockBreakdownData }) {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 overflow-hidden">
                       {item.images && item.images[0] ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={item.images[0]} alt={item.name} className="h-full w-full object-cover" />
+                        <Image src={item.images[0]} alt={item.name} width={32} height={32} unoptimized className="h-full w-full object-cover" />
                       ) : (
                         <Package className="h-4 w-4" />
                       )}

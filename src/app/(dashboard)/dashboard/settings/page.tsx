@@ -35,6 +35,17 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  function clearFieldError(field: string) {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -52,6 +63,15 @@ export default function SettingsPage() {
 
   async function handleSave() {
     if (!settings) return;
+    const errs: Record<string, string> = {};
+    if (!settings.storeName.trim()) errs.storeName = "Store name is required";
+    if (settings.storeEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.storeEmail.trim())) {
+      errs.storeEmail = "Valid email address is required";
+    }
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch("/api/settings", {
@@ -103,8 +123,25 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Input label="Store name" value={settings.storeName} onChange={(e) => setSettings({ ...settings, storeName: e.target.value })} />
-                <Input label="Store email" type="email" value={settings.storeEmail} onChange={(e) => setSettings({ ...settings, storeEmail: e.target.value })} />
+                <Input
+                  label="Store name"
+                  error={fieldErrors.storeName}
+                  value={settings.storeName}
+                  onChange={(e) => {
+                    setSettings({ ...settings, storeName: e.target.value });
+                    clearFieldError("storeName");
+                  }}
+                />
+                <Input
+                  label="Store email"
+                  type="email"
+                  error={fieldErrors.storeEmail}
+                  value={settings.storeEmail}
+                  onChange={(e) => {
+                    setSettings({ ...settings, storeEmail: e.target.value });
+                    clearFieldError("storeEmail");
+                  }}
+                />
                 <Input label="Store phone" value={settings.storePhone} onChange={(e) => setSettings({ ...settings, storePhone: e.target.value })} />
                 <Input label="Timezone" value={settings.timezone} onChange={(e) => setSettings({ ...settings, timezone: e.target.value })} />
                 <Input label="Currency code" value={settings.currency} onChange={(e) => setSettings({ ...settings, currency: e.target.value })} />
