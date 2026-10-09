@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Plus,
   Pencil,
@@ -9,6 +9,8 @@ import {
   Package,
   Star,
   ChevronDown,
+  Check,
+  X,
   Loader2,
   RefreshCw,
 } from "lucide-react";
@@ -79,6 +81,12 @@ export default function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [subcategoryFilter, setSubcategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const categoryMenuRef = useRef<HTMLDivElement>(null);
+  const [subcategoryMenuOpen, setSubcategoryMenuOpen] = useState(false);
+  const subcategoryMenuRef = useRef<HTMLDivElement>(null);
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
 
@@ -99,6 +107,27 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProductRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(e.target as Node)) {
+        setCategoryMenuOpen(false);
+      }
+      if (subcategoryMenuRef.current && !subcategoryMenuRef.current.contains(e.target as Node)) {
+        setSubcategoryMenuOpen(false);
+      }
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setStatusMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const selectedCategoryName = useMemo(() => {
+    if (!categoryFilter) return "All categories";
+    return categories.find((c) => c._id === categoryFilter)?.name || "All categories";
+  }, [categoryFilter, categories]);
 
   const loadCategories = useCallback(async () => {
     const res = await fetch("/api/categories?all=true");
@@ -392,13 +421,13 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Products</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage your product catalog, pricing and inventory.</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Products</h1>
+          <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Manage your product catalog, pricing and inventory.</p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="shrink-0">
           <Plus className="h-4 w-4" /> Add Product
         </Button>
       </div>
@@ -415,47 +444,279 @@ export default function ProductsPage() {
             placeholder="Search by name or SKU..."
           />
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <select
-              value={categoryFilter}
-onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setSubcategoryFilter("");
-                setPage(1);
-              }}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
-            >
-              <option value="">All categories</option>
-              {categories.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={subcategoryFilter}
-              onChange={(e) => {
-                setSubcategoryFilter(e.target.value);
-                setPage(1);
-              }}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
-            >
-              <option value="">All subcategories</option>
-              {filterSubcategories.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            <select
-              value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand"
-            >
-              <option value="">All statuses</option>
-              <option value="active">Active</option>
-              <option value="draft">Draft</option>
-              <option value="archived">Archived</option>
-            </select>
+            {/* Category Filter */}
+            <div className="relative" ref={categoryMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubcategoryMenuOpen(false);
+                  setStatusMenuOpen(false);
+                  setCategoryMenuOpen((v) => !v);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
+                  categoryFilter
+                    ? "border-brand bg-brand-light/40 text-brand font-medium"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                )}
+                title="Filter by category"
+              >
+                <span>{selectedCategoryName}</span>
+                {categoryFilter ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCategoryFilter("");
+                      setSubcategoryFilter("");
+                      setPage(1);
+                    }}
+                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
+                    title="Clear category filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    categoryFilter ? "text-brand" : "text-slate-400",
+                    categoryMenuOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {categoryMenuOpen && (
+                <div className="absolute left-0 sm:left-auto sm:right-0 top-full z-30 mt-1.5 w-48 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoryFilter("");
+                      setSubcategoryFilter("");
+                      setPage(1);
+                      setCategoryMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                      !categoryFilter
+                        ? "bg-brand/10 text-brand font-semibold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <span>All categories</span>
+                    {!categoryFilter && <Check className="h-3.5 w-3.5 text-brand" />}
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <div className="max-h-56 overflow-y-auto space-y-0.5">
+                    {categories.map((c) => {
+                      const isCurrent = categoryFilter === c._id;
+                      return (
+                        <button
+                          key={c._id}
+                          type="button"
+                          onClick={() => {
+                            setCategoryFilter(c._id);
+                            setSubcategoryFilter("");
+                            setPage(1);
+                            setCategoryMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                            isCurrent
+                              ? "bg-brand/10 text-brand font-semibold"
+                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                          )}
+                        >
+                          <span className="truncate">{c.name}</span>
+                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Subcategory Filter */}
+            <div className="relative" ref={subcategoryMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setCategoryMenuOpen(false);
+                  setStatusMenuOpen(false);
+                  setSubcategoryMenuOpen((v) => !v);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
+                  subcategoryFilter
+                    ? "border-brand bg-brand-light/40 text-brand font-medium"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                )}
+                title="Filter by subcategory"
+              >
+                <span>{subcategoryFilter || "All subcategories"}</span>
+                {subcategoryFilter ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSubcategoryFilter("");
+                      setPage(1);
+                    }}
+                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
+                    title="Clear subcategory filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    subcategoryFilter ? "text-brand" : "text-slate-400",
+                    subcategoryMenuOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {subcategoryMenuOpen && (
+                <div className="absolute left-0 sm:left-auto sm:right-0 top-full z-30 mt-1.5 w-48 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubcategoryFilter("");
+                      setPage(1);
+                      setSubcategoryMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                      !subcategoryFilter
+                        ? "bg-brand/10 text-brand font-semibold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <span>All subcategories</span>
+                    {!subcategoryFilter && <Check className="h-3.5 w-3.5 text-brand" />}
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <div className="max-h-56 overflow-y-auto space-y-0.5">
+                    {filterSubcategories.length === 0 ? (
+                      <p className="px-2.5 py-2 text-xs text-slate-400 text-center">No subcategories</p>
+                    ) : (
+                      filterSubcategories.map((s) => {
+                        const isCurrent = subcategoryFilter === s;
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => {
+                              setSubcategoryFilter(s);
+                              setPage(1);
+                              setSubcategoryMenuOpen(false);
+                            }}
+                            className={cn(
+                              "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                              isCurrent
+                                ? "bg-brand/10 text-brand font-semibold"
+                                : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                            )}
+                          >
+                            <span className="truncate">{s}</span>
+                            {isCurrent && <Check className="h-3.5 w-3.5 text-brand shrink-0" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Status Filter */}
+            <div className="relative" ref={statusMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setCategoryMenuOpen(false);
+                  setSubcategoryMenuOpen(false);
+                  setStatusMenuOpen((v) => !v);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
+                  statusFilter
+                    ? "border-brand bg-brand-light/40 text-brand font-medium"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                )}
+                title="Filter by status"
+              >
+                <span className="capitalize">{statusFilter || "All statuses"}</span>
+                {statusFilter ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setStatusFilter("");
+                      setPage(1);
+                    }}
+                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
+                    title="Clear status filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    statusFilter ? "text-brand" : "text-slate-400",
+                    statusMenuOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {statusMenuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter("");
+                      setPage(1);
+                      setStatusMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                      !statusFilter
+                        ? "bg-brand/10 text-brand font-semibold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <span>All statuses</span>
+                    {!statusFilter && <Check className="h-3.5 w-3.5 text-brand" />}
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <div className="max-h-56 overflow-y-auto space-y-0.5">
+                    {(["active", "draft", "archived"] as const).map((s) => {
+                      const isCurrent = statusFilter === s;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            setStatusFilter(s);
+                            setPage(1);
+                            setStatusMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left capitalize transition cursor-pointer",
+                            isCurrent
+                              ? "bg-brand/10 text-brand font-semibold"
+                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                          )}
+                        >
+                          <span>{s}</span>
+                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Card>
@@ -615,7 +876,7 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
                     clearFieldError("category");
                   }}
                   className={cn(
-                    "w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
+                    "peer w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
                     fieldErrors.category
                       ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
                       : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
@@ -628,7 +889,7 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 peer-focus:rotate-180 transition-transform duration-200" />
               </div>
               {fieldErrors.category && (
                 <p className="mt-1.5 text-xs font-medium text-rose-500">
@@ -652,7 +913,7 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
                     clearFieldError("subcategory");
                   }}
                   className={cn(
-                    "w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
+                    "peer w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs",
                     fieldErrors.subcategory
                       ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
                       : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
@@ -665,7 +926,7 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 peer-focus:rotate-180 transition-transform duration-200" />
               </div>
               {fieldErrors.subcategory && (
                 <p className="mt-1.5 text-xs font-medium text-rose-500">
@@ -689,7 +950,7 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
                     clearFieldError("status");
                   }}
                   className={cn(
-                    "w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs capitalize",
+                    "peer w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-8 text-sm text-slate-700 outline-none transition shadow-xs capitalize",
                     fieldErrors.status
                       ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
                       : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
@@ -700,7 +961,7 @@ className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-sl
                   <option value="draft">Draft</option>
                   <option value="archived">Archived</option>
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 peer-focus:rotate-180 transition-transform duration-200" />
               </div>
               {fieldErrors.status && (
                 <p className="mt-1.5 text-xs font-medium text-rose-500">

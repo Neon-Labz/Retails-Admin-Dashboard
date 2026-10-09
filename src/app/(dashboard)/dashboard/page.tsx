@@ -86,10 +86,10 @@ export default async function DashboardOverviewPage() {
   const { totals } = stats;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
-        <p className="mt-1 text-sm text-slate-500">A quick summary of your store&apos;s performance.</p>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">A quick summary of your store&apos;s performance.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

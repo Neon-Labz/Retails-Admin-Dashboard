@@ -91,13 +91,13 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Notifications</h1>
-          <p className="mt-1 text-sm text-slate-500">Stay on top of orders, stock alerts and customer activity.</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Notifications</h1>
+          <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Stay on top of orders, stock alerts and customer activity.</p>
         </div>
-        <Button variant="outline" onClick={markAllRead}>
+        <Button variant="outline" onClick={markAllRead} className="shrink-0">
           <CheckCheck className="h-4 w-4" /> Mark all as read
         </Button>
       </div>
