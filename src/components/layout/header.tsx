@@ -89,10 +89,15 @@ export function Header({ onMenuClick, admin }: HeaderProps) {
   }, []);
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    toast.success("Logged out successfully");
-    router.push("/login");
-    router.refresh();
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      toast.success("Logged out successfully");
+    } catch {
+      toast.error("Logout request failed, redirecting...");
+    } finally {
+      router.push("/login");
+      router.refresh();
+    }
   }
 
   return (

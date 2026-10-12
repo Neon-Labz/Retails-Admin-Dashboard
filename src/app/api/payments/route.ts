@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Payment } from "@/models/Payment";
+import { Customer } from "@/models/Customer";
+import { Order } from "@/models/Order";
 import { apiSuccess, handleApiError } from "@/lib/api-utils";
 import { getPaginationParams, buildPaginationMeta } from "@/lib/utils";
 
@@ -14,7 +16,13 @@ export async function GET(request: NextRequest) {
     const { page, limit, skip } = getPaginationParams(searchParams);
 
     const filter: Record<string, unknown> = {};
-    if (search) filter.orderNumber = { $regex: search, $options: "i" };
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { orderNumber: { $regex: escapedSearch, $options: "i" } },
+        { transactionId: { $regex: escapedSearch, $options: "i" } },
+      ];
+    }
     if (status) filter.status = status;
     if (method) filter.method = method;
 

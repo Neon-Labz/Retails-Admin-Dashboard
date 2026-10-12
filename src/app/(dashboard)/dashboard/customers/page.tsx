@@ -70,7 +70,10 @@ export default function CustomersPage() {
     try {
       const res = await fetch(`/api/customers/${customer._id}`);
       const json = await res.json();
-      if (json.success) setOrders(json.data.orders);
+      if (json.success) {
+        if (json.data.customer) setDetail(json.data.customer);
+        setOrders(json.data.orders);
+      }
     } finally {
       setDetailLoading(false);
     }
@@ -96,6 +99,26 @@ export default function CustomersPage() {
     }
   }
 
+  async function toggleVerification(customer: CustomerRow, isVerified: boolean) {
+    try {
+      const res = await fetch(`/api/customers/${customer._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isVerified }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Failed to update customer");
+        return;
+      }
+      toast.success(json.message);
+      load();
+      if (detail?._id === customer._id) setDetail({ ...detail, isVerified });
+    } catch {
+      toast.error("Something went wrong");
+    }
+  }
+
   const columns: Column<CustomerRow>[] = useMemo(
     () => [
       {
@@ -116,7 +139,25 @@ export default function CustomersPage() {
       { header: "Phone", key: "phone", render: (c) => c.phone || "-" },
       { header: "Orders", key: "totalOrders" },
       { header: "Total Spent", key: "totalSpent", render: (c) => formatCurrency(c.totalSpent) },
-      { header: "Verified", key: "isVerified", render: (c) => <Badge color={c.isVerified ? "green" : "yellow"}>{c.isVerified ? "Verified" : "Unverified"}</Badge> },
+      {
+        header: "Verified",
+        key: "isVerified",
+        render: (c) => (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleVerification(c, !c.isVerified);
+            }}
+            className="cursor-pointer transition hover:opacity-80"
+            title={c.isVerified ? "Click to set unverified" : "Click to set verified"}
+          >
+            <Badge color={c.isVerified ? "green" : "yellow"}>
+              {c.isVerified ? "Verified" : "Unverified"}
+            </Badge>
+          </button>
+        ),
+      },
       { header: "Status", key: "isActive", render: (c) => <Badge color={c.isActive ? "green" : "red"}>{c.isActive ? "Active" : "Suspended"}</Badge> },
       { header: "Joined", key: "createdAt", render: (c) => formatDate(c.createdAt) },
       {
@@ -203,9 +244,18 @@ export default function CustomersPage() {
                 <p className="text-xs text-slate-400">Total Spent</p>
                 <p className="text-lg font-semibold text-slate-800">{formatCurrency(detail.totalSpent)}</p>
               </div>
-              <div className="rounded-xl bg-slate-50 p-3 text-center">
+              <div className="rounded-xl bg-slate-50 p-3 text-center flex flex-col items-center justify-center">
                 <p className="text-xs text-slate-400">Verification</p>
-                <Badge color={detail.isVerified ? "green" : "yellow"}>{detail.isVerified ? "Verified" : "Unverified"}</Badge>
+                <button
+                  type="button"
+                  onClick={() => toggleVerification(detail, !detail.isVerified)}
+                  className="mt-1 cursor-pointer transition hover:opacity-80"
+                  title={detail.isVerified ? "Click to set unverified" : "Click to set verified"}
+                >
+                  <Badge color={detail.isVerified ? "green" : "yellow"}>
+                    {detail.isVerified ? "Verified" : "Unverified"}
+                  </Badge>
+                </button>
               </div>
             </div>
 

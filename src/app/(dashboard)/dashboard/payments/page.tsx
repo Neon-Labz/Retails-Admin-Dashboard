@@ -136,7 +136,7 @@ export default function PaymentsPage() {
 
       <Card className="p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number..." />
+          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number or transaction ID..." />
           <div className="flex flex-wrap gap-2">
             <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand">
               <option value="">All statuses</option>
