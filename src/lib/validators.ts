@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ORDER_STATUSES, PAYMENT_METHODS, PAYMENT_RECORD_STATUSES, STOCK_LOG_TYPES, ADMIN_ROLES } from "./constants";
+import { ORDER_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES, PAYMENT_RECORD_STATUSES, STOCK_LOG_TYPES, ADMIN_ROLES } from "./constants";
 
 export const loginSchema = z.object({
   email: z.string().email("A valid email is required"),
@@ -38,7 +38,7 @@ export const productSchema = z.object({
   name: z.string().trim().min(1, "Product name is required"),
   description: z.string().optional().default(""),
   category: z.string().min(1, "Category is required"),
-  subcategory: z.string().trim().min(1, "Subcategory is required"),
+  subcategory: z.string().trim().optional().default(""),
   price: z.coerce.number({ message: "Price is required" }).min(0, "Price must be a positive number"),
   salePrice: z.coerce.number().min(0).optional().nullable(),
   sku: z.string().trim().min(1, "SKU / Product code is required"),
@@ -51,7 +51,8 @@ export const productSchema = z.object({
 });
 
 export const orderStatusSchema = z.object({
-  status: z.enum(ORDER_STATUSES),
+  status: z.enum(ORDER_STATUSES).optional(),
+  paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
   note: z.string().optional(),
 });
 
@@ -134,6 +135,8 @@ export const createOrderSchema = z.object({
   billingAddress: z.record(z.string(), z.string()).optional().default({}),
   shippingAddress: z.record(z.string(), z.string()).optional().default({}),
   paymentMethod: z.enum(PAYMENT_METHODS).optional().default("cod"),
+  paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
+  status: z.enum(ORDER_STATUSES).optional(),
   discount: z.coerce.number().min(0).optional().default(0),
   shippingFee: z.coerce.number().min(0).optional().default(0),
   tax: z.coerce.number().min(0).optional().default(0),

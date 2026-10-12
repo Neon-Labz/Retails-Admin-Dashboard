@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, Bell, LogOut, UserCircle, Settings, ChevronRight } from "lucide-react";
+import { Menu, Bell, LogOut, UserCircle, Settings, ChevronRight, ChevronDown } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -114,7 +115,7 @@ export function Header({ onMenuClick, admin }: HeaderProps) {
         </Link>
         <div className="h-6 w-px bg-slate-200" />
         <div className="relative" ref={menuRef}>
-          <button onClick={() => setMenuOpen((v) => !v)} className="flex items-center gap-2.5 rounded-xl p-1 hover:bg-slate-200/50 transition-colors">
+          <button onClick={() => setMenuOpen((v) => !v)} className="flex items-center gap-2.5 rounded-xl p-1 hover:bg-slate-200/50 transition-colors cursor-pointer">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-hover text-sm font-bold text-white shadow-sm">
               {admin?.name?.charAt(0)?.toUpperCase() || "S"}
             </div>
@@ -122,6 +123,7 @@ export function Header({ onMenuClick, admin }: HeaderProps) {
               <p className="text-sm font-semibold text-slate-900 leading-tight">{admin?.name || "Super Admin"}</p>
               <p className="text-xs text-slate-400 leading-tight capitalize">{admin?.role ? admin.role.replace("_", " ") : "Super Admin"}</p>
             </div>
+            <ChevronDown className={cn("hidden sm:block h-3.5 w-3.5 text-slate-400 transition-transform duration-200", menuOpen && "rotate-180")} />
           </button>
           {menuOpen && (
             <div className="absolute right-0 mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200/80 bg-white py-1.5 shadow-xl shadow-slate-900/5">
