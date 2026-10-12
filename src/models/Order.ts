@@ -79,7 +79,7 @@ const OrderItemSchema = new Schema<IOrderItem>(
 
 const OrderSchema = new Schema<IOrder>(
   {
-    orderNumber: { type: String, required: true, unique: true, index: true },
+    orderNumber: { type: String, required: true, index: true },
     customer: { type: Schema.Types.ObjectId, ref: "Customer", required: true },
     customerSnapshot: {
       name: { type: String, required: true },

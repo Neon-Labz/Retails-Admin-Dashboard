@@ -26,7 +26,7 @@ import { Button, Badge, Card } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
+import { cn, formatCurrency, formatDateTime, formatOrderId } from "@/lib/utils";
 import { ORDER_STATUSES, PAYMENT_STATUSES } from "@/lib/constants";
 import { printInvoice } from "@/lib/invoice";
 
@@ -285,11 +285,14 @@ export default function OrdersPage() {
       const res = await fetch(`/api/orders?${params.toString()}`);
       const json = await res.json();
       if (json.success) {
-        const normalizedOrders = (json.data.orders as OrderRow[]).map((o) =>
-          o.paymentStatus === "pending" && (!o.status || o.status === "pending")
-            ? { ...o, status: "processing" }
-            : o
-        );
+        const normalizedOrders = (json.data.orders as OrderRow[]).map((o) => ({
+          ...o,
+          orderNumber: formatOrderId(o.orderNumber, o.createdAt),
+          status:
+            o.paymentStatus === "pending" && (!o.status || o.status === "pending")
+              ? "processing"
+              : o.status,
+        }));
         setOrders(normalizedOrders);
         setMeta(json.data.meta);
       }
@@ -307,7 +310,11 @@ export default function OrdersPage() {
       order.paymentStatus === "pending" && (!order.status || order.status === "pending")
         ? "processing"
         : order.status;
-    setDetail({ ...order, status: defaultStatus });
+    setDetail({
+      ...order,
+      orderNumber: formatOrderId(order.orderNumber, order.createdAt),
+      status: defaultStatus,
+    });
     setNewStatus(defaultStatus);
     setNewPaymentStatus(order.paymentStatus);
     setNote("");
@@ -328,7 +335,10 @@ export default function OrdersPage() {
         return;
       }
       toast.success("Order updated successfully");
-      setDetail(json.data);
+      setDetail({
+        ...json.data,
+        orderNumber: formatOrderId(json.data.orderNumber, json.data.createdAt),
+      });
       load();
     } finally {
       setUpdating(false);
@@ -346,7 +356,7 @@ export default function OrdersPage() {
               <ShoppingCart className="h-4 w-4" />
             </div>
             <div>
-              <p className="font-medium text-slate-800">{o.orderNumber}</p>
+              <p className="font-medium text-slate-800">{formatOrderId(o.orderNumber, o.createdAt)}</p>
               <p className="text-xs text-slate-400">{o.items.length} item(s)</p>
             </div>
           </div>
@@ -797,7 +807,7 @@ export default function OrdersPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                    Order {detail.orderNumber}
+                    Order {formatOrderId(detail.orderNumber, detail.createdAt)}
                   </h2>
                   {(() => {
                     const cfg = statusBadgeStyles[detail.status.toLowerCase()] || statusBadgeStyles.pending;

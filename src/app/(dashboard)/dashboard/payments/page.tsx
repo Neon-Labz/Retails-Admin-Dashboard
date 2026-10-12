@@ -6,7 +6,7 @@ import { Button, Badge, Card, Select } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency, formatDateTime, cn } from "@/lib/utils";
+import { formatCurrency, formatDateTime, formatOrderId, cn } from "@/lib/utils";
 import { PAYMENT_METHODS, PAYMENT_RECORD_STATUSES } from "@/lib/constants";
 
 interface PaymentRow {
@@ -122,7 +122,7 @@ export default function PaymentsPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-500">
               <CreditCard className="h-4 w-4" />
             </div>
-            <span className="font-medium text-slate-800">{p.orderNumber}</span>
+            <span className="font-medium text-slate-800">{formatOrderId(p.orderNumber, p.createdAt)}</span>
           </div>
         ),
       },
@@ -342,7 +342,7 @@ export default function PaymentsPage() {
       <Modal
         open={!!detail}
         onClose={() => setDetail(null)}
-        title={detail ? `Payment — ${detail.orderNumber}` : ""}
+        title={detail ? `Payment — ${formatOrderId(detail.orderNumber, detail.createdAt)}` : ""}
         footer={
           <>
             <Button variant="secondary" onClick={() => setDetail(null)}>

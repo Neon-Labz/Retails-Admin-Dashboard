@@ -7,7 +7,7 @@ import { Button, Badge, Card, Switch } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime, formatOrderId } from "@/lib/utils";
 
 interface CustomerRow {
   _id: string;
@@ -256,7 +256,7 @@ function CustomersContent() {
                 <div className="flex flex-col divide-y divide-slate-100 rounded-xl border border-slate-200">
                   {orders.map((o) => (
                     <div key={o._id} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                      <span className="font-medium text-slate-700">{o.orderNumber}</span>
+                      <span className="font-medium text-slate-700">{formatOrderId(o.orderNumber, o.createdAt)}</span>
                       <span className="text-slate-500">{formatCurrency(o.total)}</span>
                       <Badge color="blue">{o.status}</Badge>
                       <span className="text-xs text-slate-400">{formatDateTime(o.createdAt)}</span>

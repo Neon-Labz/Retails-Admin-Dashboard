@@ -1,4 +1,4 @@
-import { formatCurrency, formatDateTime } from "./utils";
+import { formatCurrency, formatDateTime, formatOrderId } from "./utils";
 
 export interface InvoiceOrderData {
   orderNumber: string;
@@ -58,6 +58,7 @@ function formatPaymentMethod(method?: string): string {
 }
 
 export function generateInvoiceHtml(order: InvoiceOrderData, storeName = "RKF Retail Store"): string {
+  const orderId = formatOrderId(order.orderNumber, order.createdAt);
   const dateStr = formatDateTime(order.createdAt);
   const discountAmount = order.discount || 0;
   const shippingAmount = order.shippingFee !== undefined ? order.shippingFee : 0;
@@ -94,7 +95,7 @@ export function generateInvoiceHtml(order: InvoiceOrderData, storeName = "RKF Re
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Invoice - ${escapeHtml(order.orderNumber)}</title>
+  <title>Invoice - ${escapeHtml(orderId)}</title>
   <style>
     @page {
       size: A4 portrait;
@@ -169,7 +170,7 @@ export function generateInvoiceHtml(order: InvoiceOrderData, storeName = "RKF Re
 
       <div style="text-align: right;">
         <div style="font-size: 24px; font-weight: 900; color: #093b84; letter-spacing: 0.05em;">INVOICE</div>
-        <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-top: 3px;"># ${escapeHtml(order.orderNumber)}</div>
+        <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-top: 3px;"># ${escapeHtml(orderId)}</div>
         <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Date: ${escapeHtml(dateStr)}</div>
         <div style="margin-top: 8px; display: flex; gap: 6px; justify-content: flex-end;">
           <span class="badge ${order.paymentStatus === "paid" ? "badge-paid" : order.paymentStatus === "pending" ? "badge-pending" : "badge-failed"}">

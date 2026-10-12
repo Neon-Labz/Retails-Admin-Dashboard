@@ -14,7 +14,7 @@ import {
   Ban,
 } from "lucide-react";
 import { Card, StatCard, Badge } from "@/components/ui/primitives";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime, formatOrderId } from "@/lib/utils";
 import { SalesTrendChart, OrderStatusPieChart, StockHealthCard, type StockBreakdownData } from "./overview-charts";
 import { ItemSalesCard } from "@/components/dashboard/item-sales-card";
 
@@ -176,7 +176,7 @@ export default async function DashboardOverviewPage() {
                 )}
                 {stats.recentOrders.map((order) => (
                   <tr key={order._id} className="border-t border-slate-100">
-                    <td className="px-5 py-3 font-medium text-slate-800">{order.orderNumber}</td>
+                    <td className="px-5 py-3 font-medium text-slate-800">{formatOrderId(order.orderNumber, order.createdAt)}</td>
                     <td className="px-5 py-3 text-slate-600">{order.customerSnapshot?.name}</td>
                     <td className="px-5 py-3 text-slate-600">{formatCurrency(order.total)}</td>
                     <td className="px-5 py-3">
