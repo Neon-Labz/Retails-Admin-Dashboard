@@ -79,7 +79,7 @@ const OrderItemSchema = new Schema<IOrderItem>(
 
 const OrderSchema = new Schema<IOrder>(
   {
-    orderNumber: { type: String, required: true, unique: true, index: true },
+    orderNumber: { type: String, required: true, index: true },
     customer: { type: Schema.Types.ObjectId, ref: "Customer", required: true },
     customerSnapshot: {
       name: { type: String, required: true },
@@ -96,7 +96,7 @@ const OrderSchema = new Schema<IOrder>(
     total: { type: Number, required: true, default: 0 },
     paymentStatus: { type: String, enum: PAYMENT_STATUSES, default: "pending" },
     paymentMethod: { type: String, enum: PAYMENT_METHODS, default: "cod" },
-    status: { type: String, enum: ORDER_STATUSES, default: "pending" },
+    status: { type: String, enum: ORDER_STATUSES, default: "processing" },
     statusHistory: {
       type: [{ status: { type: String }, changedAt: { type: Date }, note: { type: String } }],
       default: [],

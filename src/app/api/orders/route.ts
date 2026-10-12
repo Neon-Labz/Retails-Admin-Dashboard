@@ -8,18 +8,27 @@ import { createOrderSchema } from "@/lib/validators";
 import { apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 import { getPaginationParams, buildPaginationMeta, generateOrderNumber, formatCurrency } from "@/lib/utils";
 import { notifyNewOrder, notifyLowStock } from "@/lib/notify";
+import { type OrderStatus, type PaymentStatus, type PaymentRecordStatus } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
+
+    // Ensure orders with pending payments default to "processing" order status
+    await Order.updateMany(
+      { paymentStatus: "pending", status: "pending" },
+      { $set: { status: "processing" } }
+    );
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
     const paymentStatus = searchParams.get("paymentStatus") || "";
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
-    const dateFrom = searchParams.get("dateFrom");
-    const dateTo = searchParams.get("dateTo");
+    const date = searchParams.get("date");
+    const dateFrom = searchParams.get("dateFrom") || date;
+    const dateTo = searchParams.get("dateTo") || date;
     const { page, limit, skip } = getPaginationParams(searchParams);
 
     const filter: Record<string, unknown> = {};
@@ -34,8 +43,26 @@ export async function GET(request: NextRequest) {
     if (paymentStatus) filter.paymentStatus = paymentStatus;
     if (dateFrom || dateTo) {
       const range: Record<string, Date> = {};
-      if (dateFrom) range.$gte = new Date(dateFrom);
-      if (dateTo) range.$lte = new Date(dateTo);
+      if (dateFrom) {
+        const parts = dateFrom.split("-").map(Number);
+        if (parts.length === 3 && !parts.some(isNaN)) {
+          range.$gte = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+        } else {
+          const fromDate = new Date(dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          range.$gte = fromDate;
+        }
+      }
+      if (dateTo) {
+        const parts = dateTo.split("-").map(Number);
+        if (parts.length === 3 && !parts.some(isNaN)) {
+          range.$lte = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999);
+        } else {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          range.$lte = toDate;
+        }
+      }
       filter.createdAt = range;
     }
 
@@ -93,6 +120,37 @@ export async function POST(request: NextRequest) {
     const total = subtotal - data.discount + data.shippingFee + data.tax;
     const orderNumber = await generateOrderNumber();
 
+    // Payment status:
+    // - For COD: default payment status is "pending" (payment collected upon delivery)
+    // - For prepaid / online: based on customer action (e.g. "paid", "failed", or "pending")
+    const initialPaymentStatus: PaymentStatus =
+      data.paymentStatus || "pending";
+
+    // Order status:
+    // - For pending or paid payments (including COD): default order status is "processing"
+    // - If payment failed: default order status is "pending"
+    let initialOrderStatus: OrderStatus;
+    if (data.status) {
+      initialOrderStatus = data.status;
+    } else if (
+      data.paymentMethod === "cod" ||
+      initialPaymentStatus === "pending" ||
+      initialPaymentStatus === "paid"
+    ) {
+      initialOrderStatus = "processing";
+    } else {
+      initialOrderStatus = "pending";
+    }
+
+    const historyNote =
+      data.paymentMethod === "cod"
+        ? "Order created with COD — Processing (Payment Pending)"
+        : initialPaymentStatus === "paid"
+        ? "Order created and paid — Processing"
+        : initialPaymentStatus === "failed"
+        ? "Order created — Payment Failed"
+        : "Order created — Processing (Payment Pending)";
+
     const order = await Order.create({
       orderNumber,
       customer: customer._id,
@@ -106,9 +164,20 @@ export async function POST(request: NextRequest) {
       tax: data.tax,
       total,
       paymentMethod: data.paymentMethod,
+      paymentStatus: initialPaymentStatus,
+      status: initialOrderStatus,
       notes: data.notes,
-      statusHistory: [{ status: "pending", changedAt: new Date(), note: "Order created" }],
+      statusHistory: [{ status: initialOrderStatus, changedAt: new Date(), note: historyNote }],
     });
+
+    const paymentRecordStatus: PaymentRecordStatus =
+      initialPaymentStatus === "paid"
+        ? "completed"
+        : initialPaymentStatus === "failed"
+        ? "failed"
+        : initialPaymentStatus === "refunded"
+        ? "refunded"
+        : "pending";
 
     await Payment.create({
       order: order._id,
@@ -116,8 +185,9 @@ export async function POST(request: NextRequest) {
       customer: customer._id,
       amount: total,
       method: data.paymentMethod,
-      status: data.paymentMethod === "cod" ? "pending" : "pending",
-      gateway: "manual",
+      status: paymentRecordStatus,
+      gateway: data.paymentMethod === "cod" ? "cod" : "manual",
+      paidAt: initialPaymentStatus === "paid" ? new Date() : undefined,
     });
 
     customer.totalOrders = (customer.totalOrders || 0) + 1;

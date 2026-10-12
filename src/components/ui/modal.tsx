@@ -13,13 +13,19 @@ export function Modal({
   children,
   footer,
   size = "md",
+  hideHeader = false,
+  className,
+  bodyClassName,
 }: {
   open: boolean;
   onClose: () => void;
   title?: string;
   children: ReactNode;
   footer?: ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  hideHeader?: boolean;
+  className?: string;
+  bodyClassName?: string;
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -42,6 +48,7 @@ export function Modal({
     md: "max-w-lg",
     lg: "max-w-2xl",
     xl: "max-w-4xl",
+    "2xl": "max-w-5xl",
   };
 
   return createPortal(
