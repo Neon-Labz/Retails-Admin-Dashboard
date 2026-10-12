@@ -35,9 +35,15 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       finalPaymentStatus = "paid";
     }
 
-    if (status) {
-      order.status = status;
-      order.statusHistory.push({ status, changedAt: new Date(), note });
+    let finalStatus = status;
+    const effectivePayment = finalPaymentStatus || order.paymentStatus;
+    if (effectivePayment === "pending" && (!finalStatus || finalStatus === "pending")) {
+      finalStatus = "processing";
+    }
+
+    if (finalStatus) {
+      order.status = finalStatus;
+      order.statusHistory.push({ status: finalStatus, changedAt: new Date(), note });
     }
 
     if (finalPaymentStatus) {
@@ -61,8 +67,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     await order.save();
 
-    if (status) {
-      await notifyOrderStatusChange(order.orderNumber, status, order.customerSnapshot.email, order.customerSnapshot.name);
+    if (finalStatus) {
+      await notifyOrderStatusChange(order.orderNumber, finalStatus, order.customerSnapshot.email, order.customerSnapshot.name);
     }
 
     return apiSuccess(order, "Order updated successfully");

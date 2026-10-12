@@ -46,6 +46,11 @@ export async function GET(req: Request) {
       return apiSuccess({ salesByDay });
     }
 
+    await Order.updateMany(
+      { paymentStatus: "pending", status: "pending" },
+      { $set: { status: "processing" } }
+    );
+
     const [
       totalProducts,
       totalCustomers,

@@ -285,7 +285,12 @@ export default function OrdersPage() {
       const res = await fetch(`/api/orders?${params.toString()}`);
       const json = await res.json();
       if (json.success) {
-        setOrders(json.data.orders);
+        const normalizedOrders = (json.data.orders as OrderRow[]).map((o) =>
+          o.paymentStatus === "pending" && (!o.status || o.status === "pending")
+            ? { ...o, status: "processing" }
+            : o
+        );
+        setOrders(normalizedOrders);
         setMeta(json.data.meta);
       }
     } finally {
@@ -298,8 +303,12 @@ export default function OrdersPage() {
   }, [load]);
 
   function openDetail(order: OrderRow) {
-    setDetail(order);
-    setNewStatus(order.status);
+    const defaultStatus =
+      order.paymentStatus === "pending" && (!order.status || order.status === "pending")
+        ? "processing"
+        : order.status;
+    setDetail({ ...order, status: defaultStatus });
+    setNewStatus(defaultStatus);
     setNewPaymentStatus(order.paymentStatus);
     setNote("");
   }
@@ -1076,7 +1085,13 @@ export default function OrdersPage() {
                         <div className="relative">
                           <select
                             value={newPaymentStatus}
-                            onChange={(e) => setNewPaymentStatus(e.target.value)}
+                            onChange={(e) => {
+                              const nextPaymentStatus = e.target.value;
+                              setNewPaymentStatus(nextPaymentStatus);
+                              if (nextPaymentStatus === "pending") {
+                                setNewStatus("processing");
+                              }
+                            }}
                             className="peer w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-800 shadow-xs focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand cursor-pointer pr-10"
                           >
                             {PAYMENT_STATUSES.map((s) => (

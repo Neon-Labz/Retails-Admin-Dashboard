@@ -96,7 +96,7 @@ const OrderSchema = new Schema<IOrder>(
     total: { type: Number, required: true, default: 0 },
     paymentStatus: { type: String, enum: PAYMENT_STATUSES, default: "pending" },
     paymentMethod: { type: String, enum: PAYMENT_METHODS, default: "cod" },
-    status: { type: String, enum: ORDER_STATUSES, default: "pending" },
+    status: { type: String, enum: ORDER_STATUSES, default: "processing" },
     statusHistory: {
       type: [{ status: { type: String }, changedAt: { type: Date }, note: { type: String } }],
       default: [],

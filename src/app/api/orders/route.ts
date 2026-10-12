@@ -13,6 +13,13 @@ import { type OrderStatus, type PaymentStatus, type PaymentRecordStatus } from "
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
+
+    // Ensure orders with pending payments default to "processing" order status
+    await Order.updateMany(
+      { paymentStatus: "pending", status: "pending" },
+      { $set: { status: "processing" } }
+    );
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
     const status = searchParams.get("status") || "";
@@ -120,16 +127,16 @@ export async function POST(request: NextRequest) {
       data.paymentStatus || "pending";
 
     // Order status:
-    // - For COD: default order status is "processing" for pending payment
-    // - For prepaid / online:
-    //   - if customer action paid: default order status is "processing"
-    //   - if customer action failed or pending: default order status is "pending"
+    // - For pending or paid payments (including COD): default order status is "processing"
+    // - If payment failed: default order status is "pending"
     let initialOrderStatus: OrderStatus;
     if (data.status) {
       initialOrderStatus = data.status;
-    } else if (data.paymentMethod === "cod") {
-      initialOrderStatus = "processing";
-    } else if (initialPaymentStatus === "paid") {
+    } else if (
+      data.paymentMethod === "cod" ||
+      initialPaymentStatus === "pending" ||
+      initialPaymentStatus === "paid"
+    ) {
       initialOrderStatus = "processing";
     } else {
       initialOrderStatus = "pending";
@@ -142,7 +149,7 @@ export async function POST(request: NextRequest) {
         ? "Order created and paid — Processing"
         : initialPaymentStatus === "failed"
         ? "Order created — Payment Failed"
-        : "Order created — Payment Pending";
+        : "Order created — Processing (Payment Pending)";
 
     const order = await Order.create({
       orderNumber,
