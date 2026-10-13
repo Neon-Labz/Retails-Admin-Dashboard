@@ -25,6 +25,7 @@ interface PaymentRow {
 const statusColors: Record<string, "yellow" | "green" | "red" | "slate"> = {
   pending: "yellow",
   completed: "green",
+  cancelled: "red",
   failed: "red",
   refunded: "slate",
 };
@@ -72,7 +73,10 @@ export default function PaymentsPage() {
       const res = await fetch(`/api/payments?${params.toString()}`);
       const json = await res.json();
       if (json.success) {
-        setPayments(json.data.payments);
+        const normalized = (json.data.payments as PaymentRow[]).map((p) =>
+          p.status === "failed" ? { ...p, status: "cancelled" } : p
+        );
+        setPayments(normalized);
         setMeta(json.data.meta);
       }
     } finally {
@@ -81,12 +85,14 @@ export default function PaymentsPage() {
   }, [search, status, method, page]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
   function openDetail(payment: PaymentRow) {
-    setDetail(payment);
-    setNewStatus(payment.status);
+    const normalizedStatus = payment.status === "failed" ? "cancelled" : payment.status;
+    setDetail({ ...payment, status: normalizedStatus });
+    setNewStatus(normalizedStatus);
     setTransactionId(payment.transactionId || "");
   }
 

@@ -45,6 +45,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const paymentStatusMap: Record<string, "pending" | "paid" | "failed" | "refunded"> = {
       pending: "pending",
       completed: "paid",
+      cancelled: "failed",
       failed: "failed",
       refunded: "refunded",
     };

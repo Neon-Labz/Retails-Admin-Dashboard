@@ -32,7 +32,7 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export const PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-export const PAYMENT_RECORD_STATUSES = ["pending", "completed", "failed", "refunded"] as const;
+export const PAYMENT_RECORD_STATUSES = ["pending", "completed", "cancelled", "refunded"] as const;
 export type PaymentRecordStatus = (typeof PAYMENT_RECORD_STATUSES)[number];
 
 export const PAYMENT_METHODS = ["cod", "card", "paypal", "bank_transfer", "other"] as const;

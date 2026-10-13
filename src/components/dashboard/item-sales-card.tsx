@@ -8,9 +8,7 @@ import {
   Package,
   Calendar,
   Layers,
-  TrendingUp,
   BarChart2,
-  DollarSign,
   Loader2,
   FilterX,
 } from "lucide-react";
@@ -37,8 +35,11 @@ type MetricType = "units" | "revenue";
 
 export function ItemSalesCard() {
   const [dateOption, setDateOption] = useState<DateRangeOption>("14");
-  const [customStart, setCustomStart] = useState("");
-  const [customEnd, setCustomEnd] = useState("");
+  const [customStart, setCustomStart] = useState(() => {
+    const past = new Date(Date.now() - 13 * 24 * 60 * 60 * 1000);
+    return past.toISOString().split("T")[0];
+  });
+  const [customEnd, setCustomEnd] = useState(() => new Date().toISOString().split("T")[0]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [metric, setMetric] = useState<MetricType>("units");
@@ -46,14 +47,6 @@ export function ItemSalesCard() {
   const [items, setItems] = useState<ItemSalesRecord[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Initialize custom dates with today and 14 days ago
-  useEffect(() => {
-    const today = new Date();
-    const past = new Date(Date.now() - 13 * 24 * 60 * 60 * 1000);
-    setCustomEnd(today.toISOString().split("T")[0]);
-    setCustomStart(past.toISOString().split("T")[0]);
-  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -158,7 +151,7 @@ export function ItemSalesCard() {
                   : "text-slate-600 hover:text-slate-900"
               )}
             >
-              <DollarSign className="h-3.5 w-3.5" />
+              <span className="text-[11px] font-bold">LKR</span>
               Revenue
             </button>
           </div>
