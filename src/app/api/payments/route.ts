@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         { transactionId: { $regex: escapedSearch, $options: "i" } },
       ];
     }
-    if (status) filter.status = status;
+    if (status) filter.status = status === "cancelled" ? { $in: ["cancelled", "failed"] } : status;
     if (method) filter.method = method;
 
     const [payments, total, summary] = await Promise.all([

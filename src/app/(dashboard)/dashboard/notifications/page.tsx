@@ -35,6 +35,7 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +49,7 @@ export default function NotificationsPage() {
       if (json.success) {
         setNotifications(json.data.notifications);
         setMeta(json.data.meta);
+        setUnreadCount(json.data.unreadCount ?? 0);
       }
     } finally {
       setLoading(false);
@@ -55,38 +57,66 @@ export default function NotificationsPage() {
   }, [filter, page]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
   async function toggleRead(n: NotificationRow) {
-    const res = await fetch(`/api/notifications/${n._id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isRead: !n.isRead }),
-    });
-    const json = await res.json();
-    if (json.success) load();
+    try {
+      const res = await fetch(`/api/notifications/${n._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isRead: !n.isRead }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Failed to update notification");
+        return;
+      }
+      window.dispatchEvent(new Event("notifications-updated"));
+      load();
+    } catch {
+      toast.error("Failed to update notification");
+    }
   }
 
   async function remove(n: NotificationRow) {
-    const res = await fetch(`/api/notifications/${n._id}`, { method: "DELETE" });
-    const json = await res.json();
-    if (json.success) {
+    try {
+      const res = await fetch(`/api/notifications/${n._id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Failed to delete notification");
+        return;
+      }
       toast.success("Notification deleted");
-      load();
+      window.dispatchEvent(new Event("notifications-updated"));
+      if (notifications.length === 1 && page > 1) {
+        setPage((p) => p - 1);
+      } else {
+        load();
+      }
+    } catch {
+      toast.error("Failed to delete notification");
     }
   }
 
   async function markAllRead() {
-    const res = await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "mark-all-read" }),
-    });
-    const json = await res.json();
-    if (json.success) {
+    try {
+      const res = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark-all-read" }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Failed to mark notifications as read");
+        return;
+      }
       toast.success("All notifications marked as read");
+      window.dispatchEvent(new Event("notifications-updated"));
       load();
+    } catch {
+      toast.error("Failed to mark notifications as read");
     }
   }
 
@@ -97,7 +127,7 @@ export default function NotificationsPage() {
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Notifications</h1>
           <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Stay on top of orders, stock alerts and customer activity.</p>
         </div>
-        <Button variant="outline" onClick={markAllRead} className="shrink-0">
+        <Button variant="outline" onClick={markAllRead} disabled={unreadCount === 0} className="shrink-0">
           <CheckCheck className="h-4 w-4" /> Mark all as read
         </Button>
       </div>
@@ -108,11 +138,23 @@ export default function NotificationsPage() {
             key={f}
             onClick={() => { setFilter(f); setPage(1); }}
             className={cn(
-              "rounded-lg px-3.5 py-1.5 text-sm font-medium transition capitalize",
-              filter === f ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition capitalize cursor-pointer",
+              filter === f
+                ? "bg-brand text-white shadow-xs"
+                : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs"
             )}
           >
-            {f}
+            <span>{f}</span>
+            {f === "unread" && unreadCount > 0 && (
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none",
+                  filter === "unread" ? "bg-white text-brand" : "bg-brand text-white"
+                )}
+              >
+                {unreadCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -123,27 +165,42 @@ export default function NotificationsPage() {
         ) : notifications.length === 0 ? (
           <EmptyState icon={<Bell className="h-10 w-10" />} title="No notifications" description="You're all caught up!" />
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-200/70">
             {notifications.map((n) => {
               const Icon = ICONS[n.type] || Info;
               return (
-                <div key={n._id} className={cn("flex items-start gap-3 px-5 py-4", !n.isRead && "bg-brand/5")}>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                <div
+                  key={n._id}
+                  className={cn(
+                    "flex items-start gap-3 px-5 py-4 transition-colors",
+                    !n.isRead ? "bg-[#d6e4f9]/85 border-l-4 border-l-brand" : "bg-white"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                      !n.isRead ? "bg-brand text-white shadow-xs" : "bg-brand/10 text-brand"
+                    )}
+                  >
                     <Icon className="h-4.5 w-4.5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-800">{n.title}</p>
-                    <p className="text-sm text-slate-500">{n.message}</p>
-                    <p className="mt-1 text-xs text-slate-400">{formatDateTime(n.createdAt)}</p>
+                    <p className={cn("text-sm", !n.isRead ? "font-semibold text-slate-900" : "font-medium text-slate-800")}>
+                      {n.title}
+                    </p>
+                    <p className={cn("text-sm", !n.isRead ? "text-slate-700" : "text-slate-500")}>{n.message}</p>
+                    <p className={cn("mt-1 text-xs", !n.isRead ? "text-slate-500 font-medium" : "text-slate-400")}>
+                      {formatDateTime(n.createdAt)}
+                    </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <button
                       onClick={() => toggleRead(n)}
-                      className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-brand hover:bg-brand/10"
+                      className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand hover:bg-brand/10 cursor-pointer"
                     >
                       {n.isRead ? "Mark unread" : "Mark read"}
                     </button>
-                    <button onClick={() => remove(n)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-500">
+                    <button onClick={() => remove(n)} className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-500 cursor-pointer">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
