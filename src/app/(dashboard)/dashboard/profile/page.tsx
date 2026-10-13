@@ -8,6 +8,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { useToast } from "@/components/ui/toast";
 import { ROLE_LABELS, type AdminRole } from "@/lib/constants";
 import { formatDateTime } from "@/lib/utils";
+import { validateName, validateEmail } from "@/lib/validators";
 
 interface AdminProfile {
   id: string;
@@ -17,23 +18,6 @@ interface AdminProfile {
   avatar?: string;
   lastLoginAt?: string;
   createdAt?: string;
-}
-
-function validateName(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return "Full name is required";
-  if (trimmed.length < 2) return "Full name must be at least 2 characters";
-  if (!/^[a-zA-Z\s.'-]+$/.test(trimmed)) return "Full name can only contain letters and spaces";
-  return "";
-}
-
-function validateEmail(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return "Email address is required";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) {
-    return "Please enter a valid email address (e.g., admin@example.com)";
-  }
-  return "";
 }
 
 export default function ProfilePage() {

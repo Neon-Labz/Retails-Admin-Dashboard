@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, Bell, LogOut, UserCircle, Settings, ChevronRight, ChevronDown } from "lucide-react";
@@ -162,10 +163,12 @@ export function Header({ onMenuClick, admin }: HeaderProps) {
           <button onClick={() => setMenuOpen((v) => !v)} className="flex items-center gap-2.5 rounded-xl p-1 hover:bg-slate-200/50 transition-colors cursor-pointer">
             {currentAdmin?.avatar && !avatarError ? (
               <div className="h-9 w-9 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={currentAdmin.avatar}
                   alt={currentAdmin.name || "Admin"}
+                  width={36}
+                  height={36}
+                  unoptimized
                   className="h-full w-full object-cover"
                   onError={() => setAvatarError(true)}
                 />

@@ -127,6 +127,23 @@ export const adminProfileSchema = z.object({
   avatar: z.string().optional(),
 });
 
+export function validateName(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "Full name is required";
+  if (trimmed.length < 2) return "Full name must be at least 2 characters";
+  if (!/^[a-zA-Z\s.'-]+$/.test(trimmed)) return "Full name can only contain letters and spaces";
+  return "";
+}
+
+export function validateEmail(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "Email address is required";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) {
+    return "Please enter a valid email address (e.g., admin@example.com)";
+  }
+  return "";
+}
+
 export const changePasswordSchema = z.object({
   currentPassword: z
     .string()
