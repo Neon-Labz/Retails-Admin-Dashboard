@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Save, KeyRound, UserCircle } from "lucide-react";
 import { Button, Card, Input, LoadingState, Badge } from "@/components/ui/primitives";
 import { ImageUploader } from "@/components/ui/image-uploader";
@@ -18,7 +19,16 @@ interface AdminProfile {
   createdAt?: string;
 }
 
+function getErrorMessage(json: { message?: string; errors?: unknown }, fallback: string): string {
+  if (json.errors && typeof json.errors === "object") {
+    const messages = Object.values(json.errors).flat().filter(Boolean);
+    if (messages.length > 0) return messages.join(", ");
+  }
+  return json.message || fallback;
+}
+
 export default function ProfilePage() {
+  const router = useRouter();
   const toast = useToast();
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,10 +62,11 @@ export default function ProfilePage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        toast.error(json.message || "Failed to update profile");
+        toast.error(getErrorMessage(json, "Failed to update profile"));
         return;
       }
       toast.success("Profile updated successfully");
+      router.refresh();
     } finally {
       setSaving(false);
     }
@@ -75,7 +86,7 @@ export default function ProfilePage() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        toast.error(json.message || "Failed to update password");
+        toast.error(getErrorMessage(json, "Failed to update password"));
         return;
       }
       toast.success("Password updated successfully");

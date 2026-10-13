@@ -153,7 +153,7 @@ export default function PaymentsPage() {
 
       <Card className="p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <SearchInput className="flex-1 w-full" value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number..." />
+          <SearchInput className="flex-1 w-full" value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number or transaction ID..." />
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             {/* Status Filter */}
             <div className="relative" ref={statusMenuRef}>

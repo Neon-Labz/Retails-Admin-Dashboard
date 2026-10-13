@@ -69,7 +69,8 @@ export const stockAdjustSchema = z.object({
 });
 
 export const customerStatusSchema = z.object({
-  isActive: z.boolean(),
+  isActive: z.boolean().optional(),
+  isVerified: z.boolean().optional(),
 });
 
 export const settingsSchema = z.object({

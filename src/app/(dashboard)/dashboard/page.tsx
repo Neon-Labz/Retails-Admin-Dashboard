@@ -12,6 +12,8 @@ import {
   Clock,
   CheckCircle2,
   Ban,
+  Receipt,
+  TrendingUp,
 } from "lucide-react";
 import { Card, StatCard, Badge } from "@/components/ui/primitives";
 import { formatCurrency, formatDateTime, formatOrderId } from "@/lib/utils";
@@ -92,21 +94,29 @@ export default async function DashboardOverviewPage() {
         <p className="mt-0.5 text-xs sm:text-sm text-slate-500">A quick summary of your store&apos;s performance.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Row 1: Total Sales, Total Profit, Total Orders */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Total Sales" value={formatCurrency(totals.totalSales)} icon={<Banknote className="h-4.5 w-4.5" />} color="emerald" />
         <StatCard label="Total Profit" value={formatCurrency(totals.totalSales ? totals.totalSales * 0.35 : 450)} icon={<Coins className="h-4.5 w-4.5" />} color="violet" />
         <StatCard label="Total Orders" value={totals.totalOrders} icon={<ShoppingCart className="h-4.5 w-4.5" />} color="indigo" />
-        <StatCard label="Total Products" value={totals.totalProducts} icon={<Package className="h-4.5 w-4.5" />} color="sky" />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Row 2: Total Products, Total Expenses (Demo), Total Revenue (Demo) */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard label="Total Products" value={totals.totalProducts} icon={<Package className="h-4.5 w-4.5" />} color="sky" />
+        <StatCard label="Total Expenses" value={formatCurrency(485200)} icon={<Receipt className="h-4.5 w-4.5" />} color="rose" />
+        <StatCard label="Total Revenue" value={formatCurrency(totals.totalSales ? totals.totalSales * 1.15 : 2450000)} icon={<TrendingUp className="h-4.5 w-4.5" />} color="cyan" />
+      </div>
+
+      {/* Commented previous cards for future reference */}
+      {/* <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Pending Orders" value={totals.pendingOrders} icon={<Clock className="h-4.5 w-4.5" />} color="amber" />
         <StatCard label="Completed Orders" value={totals.completedOrders} icon={<CheckCircle2 className="h-4.5 w-4.5" />} color="emerald" />
         <StatCard label="Cancelled Orders" value={totals.cancelledOrders} icon={<Ban className="h-4.5 w-4.5" />} color="rose" />
         <StatCard label="Available Stock" value={totals.availableStock} icon={<Boxes className="h-4.5 w-4.5" />} color="cyan" />
-      </div>
+      </div> */}
 
-      {(totals.lowStockProducts > 0 || totals.outOfStockProducts > 0) && (
+      {/* {(totals.lowStockProducts > 0 || totals.outOfStockProducts > 0) && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {totals.lowStockProducts > 0 && (
             <div className="flex items-center gap-3 rounded-2xl border border-amber-200/90 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-[0_2px_10px_rgba(245,158,11,0.05)]">
@@ -131,7 +141,7 @@ export default async function DashboardOverviewPage() {
             </div>
           )}
         </div>
-      )}
+      )} */}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <Card className="p-6 lg:col-span-2">

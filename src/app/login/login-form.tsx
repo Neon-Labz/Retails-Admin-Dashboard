@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button, Input } from "@/components/ui/primitives";
 
@@ -12,6 +12,7 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -28,7 +29,8 @@ export function LoginForm() {
         setError(json.message || "Login failed");
         return;
       }
-      router.push("/dashboard");
+      const redirectUrl = searchParams.get("redirect") || "/dashboard";
+      router.push(redirectUrl);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
