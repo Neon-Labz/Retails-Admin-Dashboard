@@ -33,7 +33,7 @@ export default async function LoginPage() {
           </Suspense>
         </div>
         <p className="mt-6 text-center text-xs text-slate-400">
-          Demo credentials: admin@example.com / Admin@12345
+          Demo credentials: admin@gmail.com / Admin@12345
         </p>
       </div>
     </div>
