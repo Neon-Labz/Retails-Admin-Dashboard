@@ -9,7 +9,8 @@ export async function GET(request: NextRequest) {
     await connectDB();
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "";
-    const unreadOnly = searchParams.get("unreadOnly") === "true";
+    const unreadOnly =
+      searchParams.get("unreadOnly") === "true" || searchParams.get("unread") === "true";
     const { page, limit, skip } = getPaginationParams(searchParams);
 
     const filter: Record<string, unknown> = {};
@@ -22,7 +23,11 @@ export async function GET(request: NextRequest) {
       Notification.countDocuments({ isRead: false }),
     ]);
 
-    return apiSuccess({ notifications, meta: buildPaginationMeta(total, page, limit), unreadCount });
+    return apiSuccess({
+      notifications,
+      meta: buildPaginationMeta(total, page, limit),
+      unreadCount,
+    });
   } catch (err) {
     return handleApiError(err);
   }

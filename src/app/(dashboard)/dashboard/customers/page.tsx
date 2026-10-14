@@ -2,12 +2,12 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Eye, ShieldCheck, ShieldOff, UserRound } from "lucide-react";
-import { Button, Badge, Card, Switch } from "@/components/ui/primitives";
+import { Eye, ShieldCheck, ShieldOff, UserRound, ChevronDown, Check, X } from "lucide-react";
+import { Badge, Card, Switch } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency, formatDate, formatDateTime, formatOrderId } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatDateTime, formatOrderId } from "@/lib/utils";
 
 interface CustomerRow {
   _id: string;
@@ -29,6 +29,16 @@ interface OrderSummary {
   createdAt: string;
 }
 
+const CUSTOMER_STATUS_OPTIONS = [
+  { key: "active", label: "Active" },
+  { key: "inactive", label: "Suspended" },
+] as const;
+
+const CUSTOMER_VERIFICATION_OPTIONS = [
+  { key: "verified", label: "Verified" },
+  { key: "unverified", label: "Unverified" },
+] as const;
+
 function CustomersContent() {
   const toast = useToast();
   const searchParams = useSearchParams();
@@ -39,6 +49,11 @@ function CustomersContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(querySearch);
   const [statusFilter, setStatusFilter] = useState("");
+  const [verificationFilter, setVerificationFilter] = useState("");
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+  const [verificationMenuOpen, setVerificationMenuOpen] = useState(false);
+  const verificationMenuRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
 
@@ -47,12 +62,26 @@ function CustomersContent() {
   const [detailLoading, setDetailLoading] = useState(false);
   const autoOpenedRef = useRef(false);
 
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setStatusMenuOpen(false);
+      }
+      if (verificationMenuRef.current && !verificationMenuRef.current.contains(e.target as Node)) {
+        setVerificationMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
+      if (verificationFilter) params.set("verification", verificationFilter);
       params.set("page", String(page));
       params.set("limit", "10");
       const res = await fetch(`/api/customers?${params.toString()}`);
@@ -64,9 +93,10 @@ function CustomersContent() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, page]);
+  }, [search, statusFilter, verificationFilter, page]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -218,6 +248,11 @@ function CustomersContent() {
     [detail]
   );
 
+  const selectedStatusLabel =
+    CUSTOMER_STATUS_OPTIONS.find((o) => o.key === statusFilter)?.label || "All statuses";
+  const selectedVerificationLabel =
+    CUSTOMER_VERIFICATION_OPTIONS.find((o) => o.key === verificationFilter)?.label || "All verification";
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -229,23 +264,181 @@ function CustomersContent() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <SearchInput className="flex-1 w-full" value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name, email or phone..." />
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {[
-              { key: "", label: "All" },
-              { key: "active", label: "Active" },
-              { key: "inactive", label: "Suspended" },
-              { key: "verified", label: "Verified" },
-              { key: "unverified", label: "Unverified" },
-            ].map((opt) => (
+            {/* Status Filter (Active / Suspended) */}
+            <div className="relative" ref={statusMenuRef}>
               <button
-                key={opt.key}
-                onClick={() => { setStatusFilter(opt.key); setPage(1); }}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                  statusFilter === opt.key ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+                type="button"
+                onClick={() => {
+                  setVerificationMenuOpen(false);
+                  setStatusMenuOpen((v) => !v);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
+                  statusFilter
+                    ? "border-brand bg-brand-light/40 text-brand font-medium"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                )}
+                title="Filter by account status"
               >
-                {opt.label}
+                <span>{selectedStatusLabel}</span>
+                {statusFilter ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setStatusFilter("");
+                      setPage(1);
+                    }}
+                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
+                    title="Clear status filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    statusFilter ? "text-brand" : "text-slate-400",
+                    statusMenuOpen && "rotate-180"
+                  )}
+                />
               </button>
-            ))}
+
+              {statusMenuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter("");
+                      setPage(1);
+                      setStatusMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                      !statusFilter
+                        ? "bg-brand/10 text-brand font-semibold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <span>All statuses</span>
+                    {!statusFilter && <Check className="h-3.5 w-3.5 text-brand" />}
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <div className="max-h-56 overflow-y-auto space-y-0.5">
+                    {CUSTOMER_STATUS_OPTIONS.map((opt) => {
+                      const isCurrent = statusFilter === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            setStatusFilter(opt.key);
+                            setPage(1);
+                            setStatusMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                            isCurrent
+                              ? "bg-brand/10 text-brand font-semibold"
+                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Verification Filter (Verified / Unverified) */}
+            <div className="relative" ref={verificationMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusMenuOpen(false);
+                  setVerificationMenuOpen((v) => !v);
+                }}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
+                  verificationFilter
+                    ? "border-brand bg-brand-light/40 text-brand font-medium"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                )}
+                title="Filter by verification status"
+              >
+                <span>{selectedVerificationLabel}</span>
+                {verificationFilter ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setVerificationFilter("");
+                      setPage(1);
+                    }}
+                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
+                    title="Clear verification filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    verificationFilter ? "text-brand" : "text-slate-400",
+                    verificationMenuOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {verificationMenuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-48 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVerificationFilter("");
+                      setPage(1);
+                      setVerificationMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                      !verificationFilter
+                        ? "bg-brand/10 text-brand font-semibold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <span>All verification</span>
+                    {!verificationFilter && <Check className="h-3.5 w-3.5 text-brand" />}
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <div className="max-h-56 overflow-y-auto space-y-0.5">
+                    {CUSTOMER_VERIFICATION_OPTIONS.map((opt) => {
+                      const isCurrent = verificationFilter === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            setVerificationFilter(opt.key);
+                            setPage(1);
+                            setVerificationMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                            isCurrent
+                              ? "bg-brand/10 text-brand font-semibold"
+                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Card>

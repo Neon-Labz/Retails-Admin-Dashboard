@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       initialPaymentStatus === "paid"
         ? "completed"
         : initialPaymentStatus === "failed"
-        ? "failed"
+        ? "cancelled"
         : initialPaymentStatus === "refunded"
         ? "refunded"
         : "pending";

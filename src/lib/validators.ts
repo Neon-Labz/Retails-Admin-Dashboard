@@ -129,14 +129,46 @@ export const settingsSchema = z.object({
 });
 
 export const adminProfileSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Full name is required")
+    .min(2, "Full name must be at least 2 characters")
+    .regex(/^[a-zA-Z\s.'-]+$/, "Full name can only contain letters and spaces"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email address is required")
+    .email("Please enter a valid email address"),
   avatar: z.string().optional(),
 });
 
+export function validateName(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "Full name is required";
+  if (trimmed.length < 2) return "Full name must be at least 2 characters";
+  if (!/^[a-zA-Z\s.'-]+$/.test(trimmed)) return "Full name can only contain letters and spaces";
+  return "";
+}
+
+export function validateEmail(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "Email address is required";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) {
+    return "Please enter a valid email address (e.g., admin@example.com)";
+  }
+  return "";
+}
+
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(6),
-  newPassword: z.string().min(6),
+  currentPassword: z
+    .string()
+    .min(1, "Current password is required")
+    .min(6, "Current password must be at least 6 characters"),
+  newPassword: z
+    .string()
+    .min(1, "New password is required")
+    .min(6, "New password must be at least 6 characters"),
 });
 
 export const createOrderSchema = z.object({

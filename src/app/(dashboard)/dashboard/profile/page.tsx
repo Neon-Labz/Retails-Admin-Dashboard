@@ -8,6 +8,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { useToast } from "@/components/ui/toast";
 import { ROLE_LABELS, type AdminRole } from "@/lib/constants";
 import { formatDateTime } from "@/lib/utils";
+import { validateName, validateEmail } from "@/lib/validators";
 
 interface AdminProfile {
   id: string;
@@ -19,20 +20,13 @@ interface AdminProfile {
   createdAt?: string;
 }
 
-function getErrorMessage(json: { message?: string; errors?: unknown }, fallback: string): string {
-  if (json.errors && typeof json.errors === "object") {
-    const messages = Object.values(json.errors).flat().filter(Boolean);
-    if (messages.length > 0) return messages.join(", ");
-  }
-  return json.message || fallback;
-}
-
 export default function ProfilePage() {
   const router = useRouter();
   const toast = useToast();
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [profileErrors, setProfileErrors] = useState<{ name?: string; email?: string }>({});
   const [sendingReset, setSendingReset] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
 
@@ -52,19 +46,39 @@ export default function ProfilePage() {
 
   async function handleSaveProfile() {
     if (!profile) return;
+    const nameError = validateName(profile.name);
+    const emailError = validateEmail(profile.email);
+    setProfileErrors({ name: nameError, email: emailError });
+    if (nameError || emailError) return;
+
     setSaving(true);
     try {
       const res = await fetch("/api/auth/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: profile.name, email: profile.email, avatar: profile.avatar }),
+        body: JSON.stringify({
+          name: profile.name.trim(),
+          email: profile.email.trim(),
+          avatar: profile.avatar,
+        }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        toast.error(getErrorMessage(json, "Failed to update profile"));
+        if (json.errors) {
+          setProfileErrors({
+            name: json.errors.name?.[0],
+            email: json.errors.email?.[0],
+          });
+        } else if (res.status === 409) {
+          setProfileErrors((prev) => ({ ...prev, email: "This email address is already in use" }));
+        } else {
+          toast.error(json.message || "Failed to update profile");
+        }
         return;
       }
+      setProfileErrors({});
       toast.success("Profile updated successfully");
+      window.dispatchEvent(new Event("admin-profile-updated"));
       router.refresh();
     } finally {
       setSaving(false);
@@ -100,7 +114,7 @@ export default function ProfilePage() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Admin Profile</h1>
-        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Manage your personal account information and security.</p>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Manage your personal account information.</p>
       </div>
 
       <Card className="p-6">
@@ -121,8 +135,27 @@ export default function ProfilePage() {
             <UserCircle className="h-4 w-4" /> Personal Information
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="Full name" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
-            <Input label="Email address" type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
+            <Input
+              label="Full name"
+              value={profile.name}
+              onChange={(e) => {
+                const val = e.target.value;
+                setProfile({ ...profile, name: val });
+                setProfileErrors((prev) => ({ ...prev, name: validateName(val) }));
+              }}
+              error={profileErrors.name}
+            />
+            <Input
+              label="Email address"
+              type="email"
+              value={profile.email}
+              onChange={(e) => {
+                const val = e.target.value;
+                setProfile({ ...profile, email: val });
+                setProfileErrors((prev) => ({ ...prev, email: validateEmail(val) }));
+              }}
+              error={profileErrors.email}
+            />
           </div>
           <div>
             <Button onClick={handleSaveProfile} loading={saving}>

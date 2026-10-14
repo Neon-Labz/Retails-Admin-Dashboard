@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Boxes, AlertTriangle, XCircle, PackageCheck, SlidersHorizontal } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Boxes, AlertTriangle, XCircle, PackageCheck, SlidersHorizontal, ChevronDown, Check, X } from "lucide-react";
 import { Button, Badge, Card, StatCard, Select, Input, Textarea } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { formatDateTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { STOCK_LOG_TYPES } from "@/lib/constants";
 
 interface StockProduct {
@@ -18,12 +18,20 @@ interface StockProduct {
   category: { name: string } | null;
 }
 
+const STOCK_FILTER_OPTIONS = [
+  { key: "low", label: "Low stock" },
+  { key: "out", label: "Out of stock" },
+  { key: "in", label: "In stock" },
+] as const;
+
 export default function StockPage() {
   const toast = useToast();
   const [products, setProducts] = useState<StockProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState("");
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const filterMenuRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
   const [summary, setSummary] = useState({ totalStock: 0, outOfStock: 0, lowStock: 0 });
@@ -33,6 +41,16 @@ export default function StockPage() {
   const [quantity, setQuantity] = useState("1");
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (filterMenuRef.current && !filterMenuRef.current.contains(e.target as Node)) {
+        setFilterMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,6 +73,7 @@ export default function StockPage() {
   }, [search, stockFilter, page]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -124,6 +143,9 @@ export default function StockPage() {
     []
   );
 
+  const selectedFilterLabel =
+    STOCK_FILTER_OPTIONS.find((o) => o.key === stockFilter)?.label || "All statuses";
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -141,22 +163,89 @@ export default function StockPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <SearchInput className="flex-1 w-full" value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name or SKU..." />
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {[
-              { key: "", label: "All" },
-              { key: "low", label: "Low stock" },
-              { key: "out", label: "Out of stock" },
-              { key: "in", label: "In stock" },
-            ].map((opt) => (
+            <div className="relative" ref={filterMenuRef}>
               <button
-                key={opt.key}
-                onClick={() => { setStockFilter(opt.key); setPage(1); }}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                  stockFilter === opt.key ? "bg-brand text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
+                type="button"
+                onClick={() => setFilterMenuOpen((v) => !v)}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
+                  stockFilter
+                    ? "border-brand bg-brand-light/40 text-brand font-medium"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                )}
+                title="Filter by stock status"
               >
-                {opt.label}
+                <span>{selectedFilterLabel}</span>
+                {stockFilter ? (
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setStockFilter("");
+                      setPage(1);
+                    }}
+                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
+                    title="Clear stock filter"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    stockFilter ? "text-brand" : "text-slate-400",
+                    filterMenuOpen && "rotate-180"
+                  )}
+                />
               </button>
-            ))}
+
+              {filterMenuOpen && (
+                <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStockFilter("");
+                      setPage(1);
+                      setFilterMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                      !stockFilter
+                        ? "bg-brand/10 text-brand font-semibold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <span>All statuses</span>
+                    {!stockFilter && <Check className="h-3.5 w-3.5 text-brand" />}
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <div className="max-h-56 overflow-y-auto space-y-0.5">
+                    {STOCK_FILTER_OPTIONS.map((opt) => {
+                      const isCurrent = stockFilter === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            setStockFilter(opt.key);
+                            setPage(1);
+                            setFilterMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
+                            isCurrent
+                              ? "bg-brand/10 text-brand font-semibold"
+                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                          )}
+                        >
+                          <span>{opt.label}</span>
+                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Card>
