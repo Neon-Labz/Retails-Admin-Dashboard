@@ -13,6 +13,7 @@ import {
   FilterX,
 } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface ItemSalesRecord {
   _id: string;
@@ -234,7 +235,7 @@ export function ItemSalesCard() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-[#093B84] focus:ring-1 focus:ring-[#093B84] transition"
+              className="w-full appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-[#093B84] focus:ring-1 focus:ring-[#093B84] shadow-xs transition cursor-pointer hover:border-slate-300"
             >
               <option value="all">All Categories</option>
               {categories.map((c) => (
@@ -309,10 +310,12 @@ export function ItemSalesCard() {
                           )}
                         </div>
 
-                        <div className="min-w-0">
-                          <p className="truncate text-xs font-semibold text-slate-900 leading-tight">
-                            {item.name}
-                          </p>
+                        <div className="min-w-0 flex-1">
+                          <Tooltip content={item.name}>
+                            <p className="truncate text-xs font-semibold text-slate-900 leading-tight hover:text-[#093B84] transition-colors cursor-default">
+                              {item.name}
+                            </p>
+                          </Tooltip>
                           <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
                             {item.sku && <span>{item.sku}</span>}
                             {item.categoryName && (

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { ImagePlus, X, Loader2, Pencil } from "lucide-react";
 import { useToast } from "./toast";
+import { DEFAULT_FOLDER_DIMENSIONS, resizeImageToTarget } from "@/lib/image-utils";
 
 export function ImageUploader({
   images,
@@ -33,8 +34,16 @@ export function ImageUploader({
     const selected = Array.from(files).slice(0, remaining);
     setUploading(true);
     try {
+      const config = folder ? DEFAULT_FOLDER_DIMENSIONS[folder] : undefined;
       const uploaded: string[] = [];
-      for (const file of selected) {
+      for (let file of selected) {
+        if (config) {
+          try {
+            file = await resizeImageToTarget(file, config.width, config.height);
+          } catch (err) {
+            console.warn("Resize failed, using original:", err);
+          }
+        }
         const formData = new FormData();
         formData.append("file", file);
         formData.append("folder", folder);
@@ -109,7 +118,11 @@ export function ImageUploader({
         onChange={(e) => handleFiles(e.target.files)}
       />
       {!shouldHideHint && (
-        <p className="mt-2 text-xs text-slate-400">PNG, JPG up to 5MB each. Max {max} images.</p>
+        <p className="mt-2 text-xs text-slate-400">
+          {folder && DEFAULT_FOLDER_DIMENSIONS[folder]?.hint
+            ? DEFAULT_FOLDER_DIMENSIONS[folder].hint
+            : `PNG, JPG up to 5MB each. Max ${max} images.`}
+        </p>
       )}
     </div>
   );

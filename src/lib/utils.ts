@@ -14,13 +14,17 @@ export function slugify(text: string): string {
 
 export function formatCurrency(amount: number, currency = "LKR"): string {
   try {
-    const formatted = (amount || 0).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+    const isNegative = (amount || 0) < 0;
+    const absVal = Math.round(Math.abs(amount || 0));
+    const formatted = absVal.toLocaleString("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     });
-    return `LKR ${formatted}`;
+    return isNegative ? `-LKR ${formatted}` : `LKR ${formatted}`;
   } catch {
-    return `LKR ${(amount || 0).toFixed(2)}`;
+    const isNegative = (amount || 0) < 0;
+    const absVal = Math.round(Math.abs(amount || 0));
+    return isNegative ? `-LKR ${absVal}` : `LKR ${absVal}`;
   }
 }
 

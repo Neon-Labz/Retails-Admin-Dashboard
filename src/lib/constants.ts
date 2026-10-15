@@ -56,3 +56,14 @@ export const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "admin_ses
 export const SESSION_MAX_AGE_SECONDS = Number(process.env.SESSION_MAX_AGE_SECONDS || 60 * 60 * 24);
 
 export const DEFAULT_PAGE_SIZE = 10;
+
+export const EXPENSE_CATEGORIES = [
+  "Salaries & Payroll",
+  "Operations & Logistics",
+  "Taxes & Compliance",
+  "Marketing & Ads",
+  "Utilities & Rent",
+  "Packaging & Supplies",
+  "Other",
+] as const;
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];

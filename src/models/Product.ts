@@ -18,6 +18,7 @@ export interface IProduct extends Document {
   images: string[];
   imageKeys: string[];
   specifications: ISpecification[];
+  tags?: string[];
   stock: number;
   lowStockThreshold: number;
   status: ProductStatus;
@@ -43,6 +44,7 @@ const ProductSchema = new Schema<IProduct>(
       type: [{ key: { type: String }, value: { type: String } }],
       default: [],
     },
+    tags: { type: [String], default: [] },
     stock: { type: Number, default: 0, min: 0 },
     lowStockThreshold: { type: Number, default: 5, min: 0 },
     status: { type: String, enum: PRODUCT_STATUSES, default: "active" },

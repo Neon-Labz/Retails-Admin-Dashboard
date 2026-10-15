@@ -51,6 +51,7 @@ interface ProductRow {
   status: "active" | "draft" | "archived";
   isFeatured: boolean;
   images: string[];
+  tags?: string[];
   description?: string;
   specifications: Specification[];
   createdAt: string;
@@ -66,6 +67,7 @@ const emptyForm = {
   sku: "",
   image: "",
   specifications: [{ key: "", value: "" }] as Specification[],
+  tags: "",
   stock: "",
   lowStockThreshold: "",
   status: "" as "active" | "draft" | "archived" | "",
@@ -81,12 +83,6 @@ export default function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [subcategoryFilter, setSubcategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
-  const categoryMenuRef = useRef<HTMLDivElement>(null);
-  const [subcategoryMenuOpen, setSubcategoryMenuOpen] = useState(false);
-  const subcategoryMenuRef = useRef<HTMLDivElement>(null);
-  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
-  const statusMenuRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
 
@@ -107,27 +103,6 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProductRow | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (categoryMenuRef.current && !categoryMenuRef.current.contains(e.target as Node)) {
-        setCategoryMenuOpen(false);
-      }
-      if (subcategoryMenuRef.current && !subcategoryMenuRef.current.contains(e.target as Node)) {
-        setSubcategoryMenuOpen(false);
-      }
-      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
-        setStatusMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  const selectedCategoryName = useMemo(() => {
-    if (!categoryFilter) return "All categories";
-    return categories.find((c) => c._id === categoryFilter)?.name || "All categories";
-  }, [categoryFilter, categories]);
 
   const loadCategories = useCallback(async () => {
     const res = await fetch("/api/categories?all=true");
@@ -225,6 +200,7 @@ export default function ProductsPage() {
         product.specifications && product.specifications.length > 0
           ? product.specifications
           : [{ key: "", value: "" }],
+      tags: Array.isArray(product.tags) ? product.tags.join(", ") : (product.tags || ""),
       stock: String(product.stock),
       lowStockThreshold: String(product.lowStockThreshold),
       status: product.status,
@@ -278,6 +254,12 @@ export default function ProductsPage() {
         sku: form.sku.trim(),
         images: form.image ? [form.image] : [],
         specifications: form.specifications.filter((s) => s.key.trim() && s.value.trim()),
+        tags: form.tags
+          ? form.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
         stock: Number(form.stock),
         lowStockThreshold: Number(form.lowStockThreshold),
         status: form.status,
@@ -311,6 +293,7 @@ export default function ProductsPage() {
         return;
       }
       toast.success(editing ? "Product updated successfully" : "Product created successfully");
+      window.dispatchEvent(new Event("notifications-updated"));
       setModalOpen(false);
       setFieldErrors({});
       loadProducts();
@@ -445,278 +428,81 @@ export default function ProductsPage() {
           />
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             {/* Category Filter */}
-            <div className="relative" ref={categoryMenuRef}>
-              <button
-                type="button"
-                onClick={() => {
-                  setSubcategoryMenuOpen(false);
-                  setStatusMenuOpen(false);
-                  setCategoryMenuOpen((v) => !v);
+            <div className="relative">
+              <select
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setSubcategoryFilter("");
+                  setPage(1);
                 }}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
-                  categoryFilter
-                    ? "border-brand bg-brand-light/40 text-brand font-medium"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                )}
-                title="Filter by category"
+                className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand shadow-xs transition cursor-pointer hover:border-slate-300"
               >
-                <span>{selectedCategoryName}</span>
-                {categoryFilter ? (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCategoryFilter("");
-                      setSubcategoryFilter("");
-                      setPage(1);
-                    }}
-                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
-                    title="Clear category filter"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </span>
-                ) : null}
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
-                    categoryFilter ? "text-brand" : "text-slate-400",
-                    categoryMenuOpen && "rotate-180"
-                  )}
-                />
-              </button>
-
-              {categoryMenuOpen && (
-                <div className="absolute left-0 sm:left-auto sm:right-0 top-full z-30 mt-1.5 w-48 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCategoryFilter("");
-                      setSubcategoryFilter("");
-                      setPage(1);
-                      setCategoryMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
-                      !categoryFilter
-                        ? "bg-brand/10 text-brand font-semibold"
-                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                    )}
-                  >
-                    <span>All categories</span>
-                    {!categoryFilter && <Check className="h-3.5 w-3.5 text-brand" />}
-                  </button>
-                  <div className="my-1 border-t border-slate-100" />
-                  <div className="max-h-56 overflow-y-auto space-y-0.5">
-                    {categories.map((c) => {
-                      const isCurrent = categoryFilter === c._id;
-                      return (
-                        <button
-                          key={c._id}
-                          type="button"
-                          onClick={() => {
-                            setCategoryFilter(c._id);
-                            setSubcategoryFilter("");
-                            setPage(1);
-                            setCategoryMenuOpen(false);
-                          }}
-                          className={cn(
-                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
-                            isCurrent
-                              ? "bg-brand/10 text-brand font-semibold"
-                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                          )}
-                        >
-                          <span className="truncate">{c.name}</span>
-                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                <option value="">All Categories</option>
+                {categories.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             </div>
 
             {/* Subcategory Filter */}
-            <div className="relative" ref={subcategoryMenuRef}>
-              <button
-                type="button"
-                onClick={() => {
-                  setCategoryMenuOpen(false);
-                  setStatusMenuOpen(false);
-                  setSubcategoryMenuOpen((v) => !v);
+            <div className="relative">
+              <select
+                value={subcategoryFilter}
+                onChange={(e) => {
+                  setSubcategoryFilter(e.target.value);
+                  setPage(1);
                 }}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
-                  subcategoryFilter
-                    ? "border-brand bg-brand-light/40 text-brand font-medium"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                )}
-                title="Filter by subcategory"
+                className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand shadow-xs transition cursor-pointer hover:border-slate-300"
               >
-                <span>{subcategoryFilter || "All subcategories"}</span>
-                {subcategoryFilter ? (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSubcategoryFilter("");
-                      setPage(1);
-                    }}
-                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
-                    title="Clear subcategory filter"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </span>
-                ) : null}
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
-                    subcategoryFilter ? "text-brand" : "text-slate-400",
-                    subcategoryMenuOpen && "rotate-180"
-                  )}
-                />
-              </button>
-
-              {subcategoryMenuOpen && (
-                <div className="absolute left-0 sm:left-auto sm:right-0 top-full z-30 mt-1.5 w-48 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSubcategoryFilter("");
-                      setPage(1);
-                      setSubcategoryMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
-                      !subcategoryFilter
-                        ? "bg-brand/10 text-brand font-semibold"
-                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                    )}
-                  >
-                    <span>All subcategories</span>
-                    {!subcategoryFilter && <Check className="h-3.5 w-3.5 text-brand" />}
-                  </button>
-                  <div className="my-1 border-t border-slate-100" />
-                  <div className="max-h-56 overflow-y-auto space-y-0.5">
-                    {filterSubcategories.length === 0 ? (
-                      <p className="px-2.5 py-2 text-xs text-slate-400 text-center">No subcategories</p>
-                    ) : (
-                      filterSubcategories.map((s) => {
-                        const isCurrent = subcategoryFilter === s;
-                        return (
-                          <button
-                            key={s}
-                            type="button"
-                            onClick={() => {
-                              setSubcategoryFilter(s);
-                              setPage(1);
-                              setSubcategoryMenuOpen(false);
-                            }}
-                            className={cn(
-                              "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
-                              isCurrent
-                                ? "bg-brand/10 text-brand font-semibold"
-                                : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                            )}
-                          >
-                            <span className="truncate">{s}</span>
-                            {isCurrent && <Check className="h-3.5 w-3.5 text-brand shrink-0" />}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              )}
+                <option value="">All Subcategories</option>
+                {filterSubcategories.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             </div>
 
             {/* Status Filter */}
-            <div className="relative" ref={statusMenuRef}>
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand shadow-xs transition cursor-pointer hover:border-slate-300"
+              >
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            </div>
+
+            {/* Reset Filter Button */}
+            {(categoryFilter || subcategoryFilter || statusFilter) && (
               <button
                 type="button"
                 onClick={() => {
-                  setCategoryMenuOpen(false);
-                  setSubcategoryMenuOpen(false);
-                  setStatusMenuOpen((v) => !v);
+                  setCategoryFilter("");
+                  setSubcategoryFilter("");
+                  setStatusFilter("");
+                  setPage(1);
                 }}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
-                  statusFilter
-                    ? "border-brand bg-brand-light/40 text-brand font-medium"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                )}
-                title="Filter by status"
+                className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 cursor-pointer transition shadow-xs"
+                title="Reset all filters"
               >
-                <span className="capitalize">{statusFilter || "All statuses"}</span>
-                {statusFilter ? (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setStatusFilter("");
-                      setPage(1);
-                    }}
-                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
-                    title="Clear status filter"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </span>
-                ) : null}
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
-                    statusFilter ? "text-brand" : "text-slate-400",
-                    statusMenuOpen && "rotate-180"
-                  )}
-                />
+                <X className="h-3.5 w-3.5 text-slate-400" />
+                <span>Reset</span>
               </button>
-
-              {statusMenuOpen && (
-                <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter("");
-                      setPage(1);
-                      setStatusMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
-                      !statusFilter
-                        ? "bg-brand/10 text-brand font-semibold"
-                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                    )}
-                  >
-                    <span>All statuses</span>
-                    {!statusFilter && <Check className="h-3.5 w-3.5 text-brand" />}
-                  </button>
-                  <div className="my-1 border-t border-slate-100" />
-                  <div className="max-h-56 overflow-y-auto space-y-0.5">
-                    {(["active", "draft", "archived"] as const).map((s) => {
-                      const isCurrent = statusFilter === s;
-                      return (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => {
-                            setStatusFilter(s);
-                            setPage(1);
-                            setStatusMenuOpen(false);
-                          }}
-                          className={cn(
-                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left capitalize transition cursor-pointer",
-                            isCurrent
-                              ? "bg-brand/10 text-brand font-semibold"
-                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                          )}
-                        >
-                          <span>{s}</span>
-                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </Card>
@@ -857,10 +643,13 @@ export default function ProductsPage() {
                 clearFieldError("image");
               }}
               folder="products"
+              targetDimensions={{ width: 1200, height: 1600 }}
+              badge="1200 × 1600 px"
+              hint="Auto-fitted to 1200 × 1600 px (3:4 Portrait) • Max 15MB"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className={cn("text-sm font-semibold", fieldErrors.category ? "text-rose-600" : "text-slate-800")}>
@@ -969,6 +758,22 @@ export default function ProductsPage() {
                 </p>
               )}
             </div>
+
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="text-sm font-semibold text-slate-800">
+                  Tag
+                </label>
+                <span className="text-xs text-slate-400 font-medium">Optional</span>
+              </div>
+              <input
+                type="text"
+                value={form.tags}
+                onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
+                placeholder="e.g. popular, sale"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition shadow-xs"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
@@ -981,14 +786,14 @@ export default function ProductsPage() {
               <input
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 required
                 value={form.price}
                 onChange={(e) => {
                   setForm((f) => ({ ...f, price: e.target.value }));
                   clearFieldError("price");
                 }}
-                placeholder="LKR 0.00"
+                placeholder="LKR 0"
                 className={cn(
                   "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs",
                   fieldErrors.price
@@ -1013,13 +818,13 @@ export default function ProductsPage() {
               <input
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 value={form.salePrice}
                 onChange={(e) => {
                   setForm((f) => ({ ...f, salePrice: e.target.value }));
                   clearFieldError("salePrice");
                 }}
-                placeholder="LKR 0.00"
+                placeholder="LKR 0"
                 className={cn(
                   "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs",
                   fieldErrors.salePrice

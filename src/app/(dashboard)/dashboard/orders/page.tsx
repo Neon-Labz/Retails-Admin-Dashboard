@@ -140,10 +140,6 @@ export default function OrdersPage() {
   const [dateTab, setDateTab] = useState<"range" | "single">("range");
   const [dateMenuOpen, setDateMenuOpen] = useState(false);
   const dateMenuRef = useRef<HTMLDivElement>(null);
-  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
-  const statusMenuRef = useRef<HTMLDivElement>(null);
-  const [paymentMenuOpen, setPaymentMenuOpen] = useState(false);
-  const paymentMenuRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
 
@@ -157,12 +153,6 @@ export default function OrdersPage() {
     function onClickOutside(e: MouseEvent) {
       if (dateMenuRef.current && !dateMenuRef.current.contains(e.target as Node)) {
         setDateMenuOpen(false);
-      }
-      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
-        setStatusMenuOpen(false);
-      }
-      if (paymentMenuRef.current && !paymentMenuRef.current.contains(e.target as Node)) {
-        setPaymentMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", onClickOutside);
@@ -335,6 +325,7 @@ export default function OrdersPage() {
         return;
       }
       toast.success("Order updated successfully");
+      window.dispatchEvent(new Event("notifications-updated"));
       setDetail({
         ...json.data,
         orderNumber: formatOrderId(json.data.orderNumber, json.data.createdAt),
@@ -410,19 +401,17 @@ export default function OrdersPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setStatusMenuOpen(false);
-                  setPaymentMenuOpen(false);
                   setDateMenuOpen((v) => !v);
                 }}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
+                  "relative flex items-center gap-2 rounded-xl border bg-white py-2 pl-3.5 pr-8 text-xs font-medium outline-none shadow-xs transition cursor-pointer select-none hover:border-slate-300",
                   dateFrom || dateTo
-                    ? "border-brand bg-brand-light/40 text-brand font-medium"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    ? "border-brand text-brand ring-1 ring-brand font-semibold"
+                    : "border-slate-200 text-slate-700"
                 )}
                 title="Filter by date"
               >
-                <Calendar className={cn("h-4 w-4 shrink-0", dateFrom || dateTo ? "text-brand" : "text-slate-400")} />
+                <Calendar className={cn("h-3.5 w-3.5 shrink-0", dateFrom || dateTo ? "text-brand" : "text-slate-400")} />
                 <span>{getDateLabel()}</span>
                 {dateFrom || dateTo ? (
                   <span
@@ -430,7 +419,7 @@ export default function OrdersPage() {
                       e.stopPropagation();
                       clearDateFilter();
                     }}
-                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition"
+                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
                     title="Clear date filter"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -438,7 +427,7 @@ export default function OrdersPage() {
                 ) : null}
                 <ChevronDown
                   className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 transition-transform duration-200",
                     dateFrom || dateTo ? "text-brand" : "text-slate-400",
                     dateMenuOpen && "rotate-180"
                   )}
@@ -607,182 +596,61 @@ export default function OrdersPage() {
             </div>
 
             {/* Status Filter */}
-            <div className="relative" ref={statusMenuRef}>
-              <button
-                type="button"
-                onClick={() => {
-                  setDateMenuOpen(false);
-                  setPaymentMenuOpen(false);
-                  setStatusMenuOpen((v) => !v);
+            <div className="relative">
+              <select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setPage(1);
                 }}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
-                  status
-                    ? "border-brand bg-brand-light/40 text-brand font-medium"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                )}
-                title="Filter by status"
+                className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand shadow-xs transition cursor-pointer hover:border-slate-300"
               >
-                <span className="capitalize">{status ? status : "All statuses"}</span>
-                {status ? (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setStatus("");
-                      setPage(1);
-                    }}
-                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
-                    title="Clear status filter"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </span>
-                ) : null}
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
-                    status ? "text-brand" : "text-slate-400",
-                    statusMenuOpen && "rotate-180"
-                  )}
-                />
-              </button>
-
-              {statusMenuOpen && (
-                <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStatus("");
-                      setPage(1);
-                      setStatusMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
-                      !status
-                        ? "bg-brand/10 text-brand font-semibold"
-                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                    )}
-                  >
-                    <span>All statuses</span>
-                    {!status && <Check className="h-3.5 w-3.5 text-brand" />}
-                  </button>
-                  <div className="my-1 border-t border-slate-100" />
-                  <div className="max-h-56 overflow-y-auto space-y-0.5">
-                    {ORDER_STATUSES.map((s) => {
-                      const isCurrent = status === s;
-                      return (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => {
-                            setStatus(s);
-                            setPage(1);
-                            setStatusMenuOpen(false);
-                          }}
-                          className={cn(
-                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left capitalize transition cursor-pointer",
-                            isCurrent
-                              ? "bg-brand/10 text-brand font-semibold"
-                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                          )}
-                        >
-                          <span>{s}</span>
-                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                <option value="">All statuses</option>
+                {ORDER_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             </div>
 
             {/* Payment Filter */}
-            <div className="relative" ref={paymentMenuRef}>
+            <div className="relative">
+              <select
+                value={paymentStatus}
+                onChange={(e) => {
+                  setPaymentStatus(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand shadow-xs transition cursor-pointer hover:border-slate-300"
+              >
+                <option value="">All payments</option>
+                {PAYMENT_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            </div>
+
+            {/* Reset Filter Button */}
+            {(status || paymentStatus || dateFrom || dateTo) && (
               <button
                 type="button"
                 onClick={() => {
-                  setDateMenuOpen(false);
-                  setStatusMenuOpen(false);
-                  setPaymentMenuOpen((v) => !v);
+                  setStatus("");
+                  setPaymentStatus("");
+                  clearDateFilter();
                 }}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
-                  paymentStatus
-                    ? "border-brand bg-brand-light/40 text-brand font-medium"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                )}
-                title="Filter by payment status"
+                className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 cursor-pointer transition shadow-xs"
+                title="Reset all filters"
               >
-                <span className="capitalize">{paymentStatus ? paymentStatus : "All payments"}</span>
-                {paymentStatus ? (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPaymentStatus("");
-                      setPage(1);
-                    }}
-                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
-                    title="Clear payment filter"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </span>
-                ) : null}
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
-                    paymentStatus ? "text-brand" : "text-slate-400",
-                    paymentMenuOpen && "rotate-180"
-                  )}
-                />
+                <X className="h-3.5 w-3.5 text-slate-400" />
+                <span>Reset</span>
               </button>
-
-              {paymentMenuOpen && (
-                <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPaymentStatus("");
-                      setPage(1);
-                      setPaymentMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
-                      !paymentStatus
-                        ? "bg-brand/10 text-brand font-semibold"
-                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                    )}
-                  >
-                    <span>All payments</span>
-                    {!paymentStatus && <Check className="h-3.5 w-3.5 text-brand" />}
-                  </button>
-                  <div className="my-1 border-t border-slate-100" />
-                  <div className="max-h-56 overflow-y-auto space-y-0.5">
-                    {PAYMENT_STATUSES.map((s) => {
-                      const isCurrent = paymentStatus === s;
-                      return (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => {
-                            setPaymentStatus(s);
-                            setPage(1);
-                            setPaymentMenuOpen(false);
-                          }}
-                          className={cn(
-                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left capitalize transition cursor-pointer",
-                            isCurrent
-                              ? "bg-brand/10 text-brand font-semibold"
-                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                          )}
-                        >
-                          <span>{s}</span>
-                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </Card>
@@ -922,7 +790,7 @@ export default function OrdersPage() {
                       <div className="flex justify-between text-slate-600">
                         <span>Discount</span>
                         <span className="font-semibold text-emerald-600">
-                          {detail.discount > 0 ? `-${formatCurrency(detail.discount)}` : "-LKR 0.00"}
+                          {detail.discount > 0 ? `-${formatCurrency(detail.discount)}` : "LKR 0"}
                         </span>
                       </div>
                       <div className="flex justify-between text-slate-600">

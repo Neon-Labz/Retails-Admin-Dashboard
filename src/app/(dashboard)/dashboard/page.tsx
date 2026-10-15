@@ -28,6 +28,9 @@ interface DashboardStats {
     totalCustomers: number;
     totalOrders: number;
     totalSales: number;
+    totalRevenue?: number;
+    totalExpenses?: number;
+    totalProfit?: number;
     availableStock: number;
     lowStockProducts: number;
     outOfStockProducts: number;
@@ -94,18 +97,18 @@ export default async function DashboardOverviewPage() {
         <p className="mt-0.5 text-xs sm:text-sm text-slate-500">A quick summary of your store&apos;s performance.</p>
       </div>
 
-      {/* Row 1: Total Sales, Total Profit, Total Orders */}
+      {/* Row 1: Total Sales, Total Expenses, Total Profit */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Total Sales" value={formatCurrency(totals.totalSales)} icon={<Banknote className="h-4.5 w-4.5" />} color="emerald" />
-        <StatCard label="Total Profit" value={formatCurrency(totals.totalSales ? totals.totalSales * 0.35 : 450)} icon={<Coins className="h-4.5 w-4.5" />} color="violet" />
-        <StatCard label="Total Orders" value={totals.totalOrders} icon={<ShoppingCart className="h-4.5 w-4.5" />} color="indigo" />
+        <StatCard label="Total Expenses" value={formatCurrency(totals.totalExpenses ?? 0)} icon={<Receipt className="h-4.5 w-4.5" />} color="rose" />
+        <StatCard label="Total Profit" value={formatCurrency(totals.totalProfit ?? 0)} icon={<Coins className="h-4.5 w-4.5" />} color="violet" />
       </div>
 
-      {/* Row 2: Total Products, Total Expenses (Demo), Total Revenue (Demo) */}
+      {/* Row 2: Total Revenue, Total Orders, Total Products */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard label="Total Revenue" value={formatCurrency(totals.totalRevenue ?? totals.totalSales ?? 0)} icon={<TrendingUp className="h-4.5 w-4.5" />} color="cyan" />
+        <StatCard label="Total Orders" value={totals.totalOrders} icon={<ShoppingCart className="h-4.5 w-4.5" />} color="indigo" />
         <StatCard label="Total Products" value={totals.totalProducts} icon={<Package className="h-4.5 w-4.5" />} color="sky" />
-        <StatCard label="Total Expenses" value={formatCurrency(485200)} icon={<Receipt className="h-4.5 w-4.5" />} color="rose" />
-        <StatCard label="Total Revenue" value={formatCurrency(totals.totalSales ? totals.totalSales * 1.15 : 2450000)} icon={<TrendingUp className="h-4.5 w-4.5" />} color="cyan" />
       </div>
 
       {/* Commented previous cards for future reference */}
@@ -151,7 +154,6 @@ export default async function DashboardOverviewPage() {
           <div className="mb-6 flex items-center justify-between">
             <h3 className="text-base font-semibold text-slate-900">Orders by Status</h3>
             <button className="text-slate-400 hover:text-slate-600 transition-colors">
-              <span className="text-lg font-bold tracking-widest leading-none">•••</span>
             </button>
           </div>
           <OrderStatusPieChart data={stats.ordersByStatus} />
