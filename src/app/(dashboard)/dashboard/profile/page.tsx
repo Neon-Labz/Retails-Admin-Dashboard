@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, UserCircle } from "lucide-react";
+import { Save, KeyRound, UserCircle, Mail, CheckCircle2 } from "lucide-react";
 import { Button, Card, Input, LoadingState, Badge } from "@/components/ui/primitives";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useToast } from "@/components/ui/toast";
@@ -26,8 +26,9 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [profileErrors, setProfileErrors] = useState<{ name?: string; email?: string }>({});
+  const [sendingReset, setSendingReset] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -81,6 +82,29 @@ export default function ProfilePage() {
       router.refresh();
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSendResetEmail() {
+    if (!profile?.email) return;
+    setSendingReset(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: profile.email }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Failed to send reset link");
+        return;
+      }
+      setResetEmailSent(true);
+      toast.success("Password reset link sent to " + profile.email);
+    } catch {
+      toast.error("Failed to send reset link. Please try again.");
+    } finally {
+      setSendingReset(false);
     }
   }
 
@@ -138,6 +162,32 @@ export default function ProfilePage() {
               <Save className="h-4 w-4" /> Save changes
             </Button>
           </div>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+          <KeyRound className="h-4 w-4 text-slate-500" /> Change Password
+        </div>
+        <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-xl leading-relaxed">
+          Need to update your password? Click below to send a secure password reset link to your registered email (
+          <span className="font-semibold text-slate-700">{profile.email}</span>).
+        </p>
+
+        {resetEmailSent && (
+          <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-xs sm:text-sm text-emerald-800 shadow-2xs">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            <span>
+              Reset link sent! Please check your inbox for instructions to set your new password.
+            </span>
+          </div>
+        )}
+
+        <div className="mt-5">
+          <Button onClick={handleSendResetEmail} loading={sendingReset} variant="secondary">
+            <Mail className="h-4 w-4" />
+            {resetEmailSent ? "Resend Reset Link" : "Send Password Reset Email"}
+          </Button>
         </div>
       </Card>
     </div>

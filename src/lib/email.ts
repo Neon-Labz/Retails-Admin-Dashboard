@@ -1,9 +1,10 @@
 import { Resend } from "resend";
 
-const apiKey = process.env.RESEND_API_KEY;
-const fromAddress = process.env.EMAIL_FROM || "Admin Dashboard <onboarding@resend.dev>";
-
-const resend = apiKey ? new Resend(apiKey) : null;
+function getResendClient() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
 
 interface SendEmailInput {
   to: string | string[];
@@ -12,12 +13,15 @@ interface SendEmailInput {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailInput): Promise<{ sent: boolean; error?: string }> {
-  if (!resend) {
+  const client = getResendClient();
+  const fromAddress = process.env.EMAIL_FROM || "RKF Admin <onboarding@resend.dev>";
+
+  if (!client) {
     console.warn(`[email] RESEND_API_KEY not configured. Skipping email to ${to} - "${subject}"`);
     return { sent: false, error: "Email provider not configured" };
   }
   try {
-    await resend.emails.send({ from: fromAddress, to, subject, html });
+    await client.emails.send({ from: fromAddress, to, subject, html });
     return { sent: true };
   } catch (err) {
     console.error("[email] Failed to send email:", err);
@@ -52,5 +56,21 @@ export const emailTemplates = {
   },
   newCustomerAlert(name: string, email: string) {
     return layout("New Customer Registered", `<p>${name} (${email}) just created an account.</p>`);
+  },
+  passwordReset(resetUrl: string) {
+    return layout(
+      "Reset your password",
+      `
+      <p style="margin-bottom: 16px;">You requested a password reset.</p>
+      <p style="margin-bottom: 12px;">Click the link below (valid for 1 hour):</p>
+      <p style="margin: 20px 0;">
+        <a href="${resetUrl}" style="background-color: #1e293b; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; font-weight: 600; font-size: 14px;">Reset Password</a>
+      </p>
+      <p style="word-break: break-all; margin-bottom: 24px;">
+        <a href="${resetUrl}" style="color: #2563eb; text-decoration: underline;">${resetUrl}</a>
+      </p>
+      <p style="font-size: 13px; color: #6b7280;">If you did not request this, ignore this email.</p>
+      `
+    );
   },
 };
