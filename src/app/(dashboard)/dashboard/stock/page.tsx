@@ -30,8 +30,6 @@ export default function StockPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState("");
-  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
-  const filterMenuRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, totalPages: 1, limit: 10 });
   const [summary, setSummary] = useState({ totalStock: 0, outOfStock: 0, lowStock: 0 });
@@ -41,16 +39,6 @@ export default function StockPage() {
   const [quantity, setQuantity] = useState("1");
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (filterMenuRef.current && !filterMenuRef.current.contains(e.target as Node)) {
-        setFilterMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,6 +87,7 @@ export default function StockPage() {
         return;
       }
       toast.success("Stock updated successfully");
+      window.dispatchEvent(new Event("notifications-updated"));
       setAdjustTarget(null);
       load();
     } finally {
@@ -143,9 +132,6 @@ export default function StockPage() {
     []
   );
 
-  const selectedFilterLabel =
-    STOCK_FILTER_OPTIONS.find((o) => o.key === stockFilter)?.label || "All statuses";
-
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -163,89 +149,39 @@ export default function StockPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <SearchInput className="flex-1 w-full" value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name or SKU..." />
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <div className="relative" ref={filterMenuRef}>
+            <div className="relative">
+              <select
+                value={stockFilter}
+                onChange={(e) => {
+                  setStockFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand shadow-xs transition cursor-pointer hover:border-slate-300"
+              >
+                <option value="">All statuses</option>
+                {STOCK_FILTER_OPTIONS.map((opt) => (
+                  <option key={opt.key} value={opt.key}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            </div>
+
+            {stockFilter && (
               <button
                 type="button"
-                onClick={() => setFilterMenuOpen((v) => !v)}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm outline-none transition cursor-pointer select-none shadow-xs",
-                  stockFilter
-                    ? "border-brand bg-brand-light/40 text-brand font-medium"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                )}
-                title="Filter by stock status"
+                onClick={() => {
+                  setStockFilter("");
+                  setPage(1);
+                }}
+                className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 cursor-pointer transition shadow-xs"
+                title="Reset stock filter"
               >
-                <span>{selectedFilterLabel}</span>
-                {stockFilter ? (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setStockFilter("");
-                      setPage(1);
-                    }}
-                    className="ml-0.5 rounded p-0.5 hover:bg-brand/10 text-brand transition cursor-pointer"
-                    title="Clear stock filter"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </span>
-                ) : null}
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
-                    stockFilter ? "text-brand" : "text-slate-400",
-                    filterMenuOpen && "rotate-180"
-                  )}
-                />
+                <X className="h-3.5 w-3.5 text-slate-400" />
+                <span>Reset</span>
               </button>
-
-              {filterMenuOpen && (
-                <div className="absolute right-0 top-full z-30 mt-1.5 w-44 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-900/10 animate-modal-in">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStockFilter("");
-                      setPage(1);
-                      setFilterMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
-                      !stockFilter
-                        ? "bg-brand/10 text-brand font-semibold"
-                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                    )}
-                  >
-                    <span>All statuses</span>
-                    {!stockFilter && <Check className="h-3.5 w-3.5 text-brand" />}
-                  </button>
-                  <div className="my-1 border-t border-slate-100" />
-                  <div className="max-h-56 overflow-y-auto space-y-0.5">
-                    {STOCK_FILTER_OPTIONS.map((opt) => {
-                      const isCurrent = stockFilter === opt.key;
-                      return (
-                        <button
-                          key={opt.key}
-                          type="button"
-                          onClick={() => {
-                            setStockFilter(opt.key);
-                            setPage(1);
-                            setFilterMenuOpen(false);
-                          }}
-                          className={cn(
-                            "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium text-left transition cursor-pointer",
-                            isCurrent
-                              ? "bg-brand/10 text-brand font-semibold"
-                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                          )}
-                        >
-                          <span>{opt.label}</span>
-                          {isCurrent && <Check className="h-3.5 w-3.5 text-brand" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </Card>

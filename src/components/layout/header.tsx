@@ -14,13 +14,14 @@ interface HeaderProps {
 }
 
 const LABELS: Record<string, string> = {
-  dashboard: "Overview",
+  dashboard: "Dashboard",
   products: "Products",
   categories: "Categories",
   orders: "Orders",
   stock: "Stock & Inventory",
   customers: "Customers",
   payments: "Payments",
+  "profit-expenses": "Profit & Expenses",
   notifications: "Notifications",
   settings: "Settings",
   profile: "Admin Profile",
@@ -30,18 +31,23 @@ export function Breadcrumbs() {
   const pathname = usePathname();
   const segments = (pathname || "").split("/").filter(Boolean);
 
+  if (segments.length === 0) {
+    return (
+      <nav className="flex items-center gap-1.5 text-sm text-slate-500">
+        <span className="font-medium text-slate-700">Dashboard</span>
+      </nav>
+    );
+  }
+
   return (
     <nav className="flex items-center gap-1.5 text-sm text-slate-500">
-      <Link href="/dashboard" className="hover:text-slate-700">
-        Home
-      </Link>
       {segments.map((seg, idx) => {
         const href = "/" + segments.slice(0, idx + 1).join("/");
         const label = LABELS[seg] || seg;
         const isLast = idx === segments.length - 1;
         return (
           <span key={href} className="flex items-center gap-1.5">
-            <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
+            {idx > 0 && <ChevronRight className="h-3.5 w-3.5 text-slate-300" />}
             {isLast ? (
               <span className="font-medium text-slate-700">{label}</span>
             ) : (

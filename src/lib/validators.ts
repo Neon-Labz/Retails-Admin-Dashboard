@@ -64,6 +64,7 @@ export const productSchema = z.object({
   lowStockThreshold: z.coerce.number({ message: "Low alert threshold is required" }).min(0, "Low alert threshold must be 0 or more"),
   status: z.enum(["active", "draft", "archived"] as const, { message: "Status is required" }),
   isFeatured: z.boolean().optional().default(false),
+  tags: z.union([z.array(z.string()), z.string()]).optional().default([]),
 });
 
 export const orderStatusSchema = z.object({
@@ -198,3 +199,13 @@ export const inviteAdminSchema = z.object({
   password: z.string().min(6),
   role: z.enum(ADMIN_ROLES),
 });
+
+export const expenseSchema = z.object({
+  title: z.string().trim().min(1, "Title is required"),
+  description: z.string().optional().default(""),
+  category: z.string().trim().min(1, "Category is required"),
+  amount: z.coerce.number().min(0.01, "Amount must be greater than 0"),
+  date: z.coerce.date().optional().default(() => new Date()),
+  notes: z.string().optional().default(""),
+});
+

@@ -60,15 +60,7 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-slate-800">Password</label>
-          <Link
-            href="/forgot-password"
-            className="text-xs font-medium text-[#1e293b] hover:text-brand hover:underline transition-colors"
-          >
-            Forgot password?
-          </Link>
-        </div>
+        <label className="text-sm font-medium text-slate-800">Password</label>
         <div className="relative">
           <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
@@ -88,33 +80,19 @@ export function LoginForm() {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        <div className="flex justify-end pt-0.5">
+          <Link
+            href="/forgot-password"
+            className="text-xs font-medium text-slate-600 hover:text-brand hover:underline transition-colors"
+          >
+            Forgot password?
+          </Link>
+        </div>
       </div>
 
       <Button type="submit" loading={loading} className="mt-2 w-full rounded-xl py-2.5 font-semibold" size="lg">
         Sign in
       </Button>
-
-      <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2 text-[11px] text-slate-500">
-        <span>Quick fill:</span>
-        <button
-          type="button"
-          onClick={() => setEmail("admin@gmail.com")}
-          className={`rounded-md px-2 py-0.5 font-medium transition cursor-pointer ${
-            email === "admin@gmail.com" ? "bg-brand/10 text-brand font-semibold" : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-          }`}
-        >
-          admin@gmail.com
-        </button>
-        <button
-          type="button"
-          onClick={() => setEmail("thigamparanneonlabz@gmail.com")}
-          className={`rounded-md px-2 py-0.5 font-medium transition cursor-pointer ${
-            email === "thigamparanneonlabz@gmail.com" ? "bg-brand/10 text-brand font-semibold" : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-          }`}
-        >
-          thigamparanneonlabz@gmail.com
-        </button>
-      </div>
     </form>
   );
 }
