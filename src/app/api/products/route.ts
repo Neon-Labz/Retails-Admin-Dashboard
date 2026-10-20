@@ -23,10 +23,11 @@ export async function GET(request: NextRequest) {
 
     const filter: Record<string, unknown> = {};
     if (search) {
+      const escaped = escapeRegex(search);
       filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { sku: { $regex: search, $options: "i" } },
-        { tags: { $regex: search, $options: "i" } },
+        { name: { $regex: escaped, $options: "i" } },
+        { sku: { $regex: escaped, $options: "i" } },
+        { tags: { $regex: escaped, $options: "i" } },
       ];
     }
     if (category) filter.category = category;
