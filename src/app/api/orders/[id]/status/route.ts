@@ -56,12 +56,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           : finalPaymentStatus === "refunded"
           ? "refunded"
           : "pending";
-      await Payment.updateOne(
+      await Payment.findOneAndUpdate(
         { order: order._id },
         {
-          status: paymentRecordStatus,
-          ...(finalPaymentStatus === "paid" ? { paidAt: new Date() } : {}),
-        }
+          $set: {
+            orderNumber: order.orderNumber,
+            customer: order.customer,
+            amount: order.total,
+            method: order.paymentMethod || "cod",
+            status: paymentRecordStatus,
+            ...(finalPaymentStatus === "paid" ? { paidAt: new Date() } : {}),
+          },
+          $setOnInsert: {
+            gateway: order.paymentMethod === "cod" ? "cod" : "manual",
+            createdAt: order.createdAt,
+          },
+        },
+        { upsert: true }
       );
     }
 

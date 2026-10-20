@@ -215,7 +215,6 @@ export default function ProductsPage() {
     if (!form.sku.trim()) errs.sku = "SKU / Product code is required";
     if (!form.image) errs.image = "Product image is required";
     if (!form.category) errs.category = "Category is required";
-    if (!form.subcategory.trim()) errs.subcategory = "Subcategory is required";
     if (!form.status) errs.status = "Status is required";
 
     if (!form.price.trim()) {
@@ -690,12 +689,12 @@ export default function ProductsPage() {
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className={cn("text-sm font-semibold", fieldErrors.subcategory ? "text-rose-600" : "text-slate-800")}>
-                  Subcategory <span className="text-rose-500 font-bold">*</span>
+                  Subcategory
                 </label>
+                <span className="text-xs text-slate-400 font-medium">Optional</span>
               </div>
               <div className="relative">
                 <select
-                  required
                   value={form.subcategory}
                   onChange={(e) => {
                     setForm((f) => ({ ...f, subcategory: e.target.value }));
@@ -708,7 +707,7 @@ export default function ProductsPage() {
                       : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
                   )}
                 >
-                  <option value="">Select subcategory</option>
+                  <option value="">Select subcategory (optional)</option>
                   {formSubcategories.map((s, idx) => (
                     <option key={s._id || idx} value={s.name}>
                       {s.name}
