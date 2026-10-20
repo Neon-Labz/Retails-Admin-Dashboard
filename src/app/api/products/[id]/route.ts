@@ -2,10 +2,13 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Product } from "@/models/Product";
 import { Order } from "@/models/Order";
+import { StockLog } from "@/models/StockLog";
 import { productSchema } from "@/lib/validators";
 import { apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
-import { slugify } from "@/lib/utils";
-import { deleteFile } from "@/lib/r2";
+import { slugify, escapeRegex } from "@/lib/utils";
+import { deleteFile, getKeyFromUrl } from "@/lib/r2";
+import { notifyLowStock } from "@/lib/notify";
+import { getSession } from "@/lib/auth";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -30,7 +33,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const body = await request.json();
     const data = productSchema.parse(body);
 
-    const duplicateSku = await Product.findOne({ sku: data.sku.toUpperCase(), _id: { $ne: id } });
+    const duplicateSku = await Product.findOne({
+      sku: { $regex: new RegExp(`^${escapeRegex(data.sku.trim())}$`, "i") },
+      _id: { $ne: id },
+    });
     if (duplicateSku) return apiError("A product with this SKU already exists", 409);
 
     const current = await Product.findById(id);
@@ -43,17 +49,49 @@ export async function PUT(request: NextRequest, { params }: Params) {
       if (slugExists) slug = `${slug}-${Date.now().toString().slice(-5)}`;
     }
 
-    const removedImages = current.images.filter((img) => !data.images.includes(img));
-    const removedKeys = current.imageKeys.filter((_, idx) => removedImages.includes(current.images[idx]));
+    const removedImages = (current.images || []).filter((img) => !(data.images || []).includes(img));
+    for (const img of removedImages) {
+      await deleteFile(img);
+    }
+
+    const updatedImageKeys = (data.images || [])
+      .map((img) => getKeyFromUrl(img))
+      .filter((k): k is string => Boolean(k));
+
+    const tags = Array.isArray(data.tags)
+      ? data.tags.map((t) => String(t).trim()).filter(Boolean)
+      : typeof data.tags === "string"
+      ? (data.tags as string).split(",").map((t) => t.trim()).filter(Boolean)
+      : [];
 
     const product = await Product.findByIdAndUpdate(
       id,
-      { ...data, slug, imageKeys: current.imageKeys.filter((k) => !removedKeys.includes(k)) },
+      { ...data, tags, slug, imageKeys: updatedImageKeys },
       { new: true }
     );
+    if (!product) return apiError("Product not found", 404);
 
-    for (const key of removedKeys) {
-      await deleteFile(key);
+    const previousStock = current.stock;
+    const newStock = product.stock;
+
+    if (previousStock !== newStock) {
+      const session = await getSession();
+      const diff = newStock - previousStock;
+      await StockLog.create({
+        product: product._id,
+        productName: product.name,
+        type: diff > 0 ? "increase" : "decrease",
+        quantity: Math.abs(diff),
+        previousStock,
+        newStock,
+        reason: "Manual adjustment via product edit",
+        admin: session?.adminId,
+        adminName: session?.name || "Admin",
+      });
+    }
+
+    if (newStock <= product.lowStockThreshold) {
+      await notifyLowStock({ _id: product._id, name: product.name, stock: newStock });
     }
 
     return apiSuccess(product, "Product updated successfully");
@@ -78,8 +116,16 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
     const product = await Product.findByIdAndDelete(id);
     if (!product) return apiError("Product not found", 404);
 
+    const targetsToDelete = new Set<string>();
     for (const key of product.imageKeys || []) {
-      await deleteFile(key);
+      if (key) targetsToDelete.add(key);
+    }
+    for (const imgUrl of product.images || []) {
+      if (imgUrl) targetsToDelete.add(imgUrl);
+    }
+
+    for (const target of targetsToDelete) {
+      await deleteFile(target);
     }
 
     return apiSuccess(null, "Product deleted successfully");

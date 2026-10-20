@@ -13,6 +13,10 @@ export async function GET(_request: NextRequest, { params }: Params) {
     const { id } = await params;
     const order = await Order.findById(id).populate("customer", "name email phone");
     if (!order) return apiError("Order not found", 404);
+    if (order.paymentStatus === "pending" && order.status === "pending") {
+      order.status = "processing";
+      await order.save();
+    }
     return apiSuccess(order);
   } catch (err) {
     return handleApiError(err);

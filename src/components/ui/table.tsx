@@ -3,6 +3,7 @@
 import { type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Button, Spinner, EmptyState } from "./primitives";
+import { cn } from "@/lib/utils";
 
 export interface Column<T> {
   header: string;
@@ -109,19 +110,21 @@ export function SearchInput({
   value,
   onChange,
   placeholder = "Search...",
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  className?: string;
 }) {
   return (
-    <div className="relative w-full sm:w-72">
+    <div className={cn("relative flex-1 w-full", className)}>
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+        className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
       />
     </div>
   );

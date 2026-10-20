@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { CreditCard, Eye } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CreditCard, Eye, ChevronDown, Check, X } from "lucide-react";
 import { Button, Badge, Card, Select } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime, formatOrderId, cn } from "@/lib/utils";
 import { PAYMENT_METHODS, PAYMENT_RECORD_STATUSES } from "@/lib/constants";
 
 interface PaymentRow {
@@ -25,6 +25,7 @@ interface PaymentRow {
 const statusColors: Record<string, "yellow" | "green" | "red" | "slate"> = {
   pending: "yellow",
   completed: "green",
+  cancelled: "red",
   failed: "red",
   refunded: "slate",
 };
@@ -55,7 +56,10 @@ export default function PaymentsPage() {
       const res = await fetch(`/api/payments?${params.toString()}`);
       const json = await res.json();
       if (json.success) {
-        setPayments(json.data.payments);
+        const normalized = (json.data.payments as PaymentRow[]).map((p) =>
+          p.status === "failed" ? { ...p, status: "cancelled" } : p
+        );
+        setPayments(normalized);
         setMeta(json.data.meta);
       }
     } finally {
@@ -64,12 +68,14 @@ export default function PaymentsPage() {
   }, [search, status, method, page]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
   function openDetail(payment: PaymentRow) {
-    setDetail(payment);
-    setNewStatus(payment.status);
+    const normalizedStatus = payment.status === "failed" ? "cancelled" : payment.status;
+    setDetail({ ...payment, status: normalizedStatus });
+    setNewStatus(normalizedStatus);
     setTransactionId(payment.transactionId || "");
   }
 
@@ -105,7 +111,7 @@ export default function PaymentsPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-500">
               <CreditCard className="h-4 w-4" />
             </div>
-            <span className="font-medium text-slate-800">{p.orderNumber}</span>
+            <span className="font-medium text-slate-800">{formatOrderId(p.orderNumber, p.createdAt)}</span>
           </div>
         ),
       },
@@ -118,7 +124,7 @@ export default function PaymentsPage() {
         header: "Actions",
         key: "actions",
         render: (p) => (
-          <button onClick={() => openDetail(p)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600">
+          <button onClick={() => openDetail(p)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-brand">
             <Eye className="h-4 w-4" />
           </button>
         ),
@@ -128,32 +134,72 @@ export default function PaymentsPage() {
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Payments</h1>
-        <p className="mt-1 text-sm text-slate-500">Track payment status and transaction details for every order.</p>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Payments</h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Track payment status and transaction details for every order.</p>
       </div>
 
       <Card className="p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number..." />
-          <div className="flex flex-wrap gap-2">
-            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500">
-              <option value="">All statuses</option>
-              {PAYMENT_RECORD_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            <select value={method} onChange={(e) => { setMethod(e.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500">
-              <option value="">All methods</option>
-              {PAYMENT_METHODS.map((m) => (
-                <option key={m} value={m}>
-                  {m.replace("_", " ")}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchInput className="flex-1 w-full" value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search order number or transaction ID..." />
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {/* Status Filter */}
+            <div className="relative">
+              <select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand shadow-xs transition cursor-pointer hover:border-slate-300"
+              >
+                <option value="">All statuses</option>
+                {PAYMENT_RECORD_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            </div>
+
+            {/* Method Filter */}
+            <div className="relative">
+              <select
+                value={method}
+                onChange={(e) => {
+                  setMethod(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3.5 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand shadow-xs transition cursor-pointer hover:border-slate-300"
+              >
+                <option value="">All methods</option>
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m} value={m}>
+                    {m.replace("_", " ").charAt(0).toUpperCase() + m.replace("_", " ").slice(1)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            </div>
+
+            {/* Reset Filter Button */}
+            {(status || method) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatus("");
+                  setMethod("");
+                  setPage(1);
+                }}
+                className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 cursor-pointer transition shadow-xs"
+                title="Reset filters"
+              >
+                <X className="h-3.5 w-3.5 text-slate-400" />
+                <span>Reset</span>
+              </button>
+            )}
           </div>
         </div>
       </Card>
@@ -166,7 +212,7 @@ export default function PaymentsPage() {
       <Modal
         open={!!detail}
         onClose={() => setDetail(null)}
-        title={detail ? `Payment — ${detail.orderNumber}` : ""}
+        title={detail ? `Payment — ${formatOrderId(detail.orderNumber, detail.createdAt)}` : ""}
         footer={
           <>
             <Button variant="secondary" onClick={() => setDetail(null)}>
@@ -211,7 +257,7 @@ export default function PaymentsPage() {
                 value={transactionId}
                 onChange={(e) => setTransactionId(e.target.value)}
                 placeholder="e.g. txn_1234567890"
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
             </div>
           </div>

@@ -18,19 +18,36 @@ export async function getStoreSettings() {
   let settings = await Settings.findOne();
   if (!settings) {
     settings = await Settings.create({});
+  } else if (settings.currency === "USD" && settings.currencySymbol === "$") {
+    settings.currency = "LKR";
+    settings.currencySymbol = "LKR";
+    await settings.save();
   }
   return settings;
 }
 
 export async function notifyLowStock(product: { _id: unknown; name: string; stock: number }) {
-  await createNotification({
-    type: product.stock <= 0 ? "out_of_stock" : "low_stock",
-    title: product.stock <= 0 ? "Product out of stock" : "Low stock alert",
-    message: `${product.name} ${product.stock <= 0 ? "is now out of stock" : `has only ${product.stock} unit(s) left`}.`,
+  const notifType = product.stock <= 0 ? "out_of_stock" : "low_stock";
+  const title = product.stock <= 0 ? "Product out of stock" : "Low stock alert";
+  const message = `${product.name} ${product.stock <= 0 ? "is now out of stock" : `has only ${product.stock} unit(s) left`}.`;
+
+  const identicalUnread = await Notification.findOne({
     relatedId: String(product._id),
-    relatedType: "product",
-    link: "/dashboard/stock",
+    type: notifType,
+    message,
+    isRead: false,
   });
+
+  if (!identicalUnread) {
+    await createNotification({
+      type: notifType,
+      title,
+      message,
+      relatedId: String(product._id),
+      relatedType: "product",
+      link: "/dashboard/stock",
+    });
+  }
 
   const settings = await getStoreSettings();
   if (settings.emailSettings?.lowStockAlerts && settings.storeEmail) {

@@ -32,9 +32,10 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) return apiError("Unauthorized", 401);
-    const { key } = await request.json();
-    if (!key) return apiError("File key is required", 400);
-    await deleteFile(key);
+    const body = await request.json();
+    const target = body.key || body.url;
+    if (!target) return apiError("File key or url is required", 400);
+    await deleteFile(target);
     return apiSuccess(null, "File deleted successfully");
   } catch (err) {
     return handleApiError(err);

@@ -32,7 +32,7 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export const PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-export const PAYMENT_RECORD_STATUSES = ["pending", "completed", "failed", "refunded"] as const;
+export const PAYMENT_RECORD_STATUSES = ["pending", "completed", "cancelled", "refunded"] as const;
 export type PaymentRecordStatus = (typeof PAYMENT_RECORD_STATUSES)[number];
 
 export const PAYMENT_METHODS = ["cod", "card", "paypal", "bank_transfer", "other"] as const;
@@ -53,6 +53,17 @@ export const STOCK_LOG_TYPES = ["increase", "decrease", "adjustment", "sale", "r
 export type StockLogType = (typeof STOCK_LOG_TYPES)[number];
 
 export const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || "admin_session";
-export const SESSION_MAX_AGE_SECONDS = Number(process.env.SESSION_MAX_AGE_SECONDS || 60 * 60 * 24 * 7);
+export const SESSION_MAX_AGE_SECONDS = Number(process.env.SESSION_MAX_AGE_SECONDS || 60 * 60 * 24);
 
 export const DEFAULT_PAGE_SIZE = 10;
+
+export const EXPENSE_CATEGORIES = [
+  "Salaries & Payroll",
+  "Operations & Logistics",
+  "Taxes & Compliance",
+  "Marketing & Ads",
+  "Utilities & Rent",
+  "Packaging & Supplies",
+  "Other",
+] as const;
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];

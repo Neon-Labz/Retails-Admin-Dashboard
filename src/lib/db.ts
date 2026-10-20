@@ -1,8 +1,15 @@
 import mongoose from "mongoose";
 import path from "node:path";
+import fs from "node:fs";
+import dns from "node:dns";
+
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch {
+  // Ignore if restricted
+}
 
 declare global {
-  // eslint-disable-next-line no-var
   var __mongooseConn: {
     conn: typeof mongoose | null;
     promise: Promise<typeof mongoose> | null;
@@ -15,11 +22,15 @@ global.__mongooseConn = cached;
 
 async function startEmbeddedFallback(): Promise<string> {
   if (cached.memoryUri) return cached.memoryUri;
+  const dbPath = path.join(process.cwd(), ".data", "mongo");
+  if (!fs.existsSync(dbPath)) {
+    fs.mkdirSync(dbPath, { recursive: true });
+  }
   const { MongoMemoryServer } = await import("mongodb-memory-server");
   const instance = await MongoMemoryServer.create({
     instance: {
       dbName: "ecommerce_admin",
-      dbPath: path.join(process.cwd(), ".data", "mongo"),
+      dbPath,
       storageEngine: "wiredTiger",
     },
   });
