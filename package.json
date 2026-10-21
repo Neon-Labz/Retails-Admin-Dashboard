@@ -7,8 +7,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "seeds": "tsx --env-file=.env.local scripts/seed.ts",
-    "seed-products": "tsx --env-file=.env.local scripts/add-20-demo-products.ts"
+    "seeds": "tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1146.0",
