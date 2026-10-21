@@ -58,6 +58,7 @@ export const productSchema = z.object({
   price: z.coerce.number({ message: "Price is required" }).min(0, "Price must be a positive number"),
   salePrice: z.coerce.number().min(0).optional().nullable(),
   sku: z.string().trim().min(1, "SKU / Product code is required"),
+  weight: z.coerce.number({ message: "Weight is required" }).min(0, "Weight must be 0 or more"),
   images: z.array(z.string()).optional().default([]),
   specifications: z.array(specificationSchema).optional().default([]),
   stock: z.coerce.number({ message: "Stock quantity is required" }).min(0, "Stock quantity must be 0 or more"),

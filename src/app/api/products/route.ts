@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Product } from "@/models/Product";
+import "@/models/Category";
 import { productSchema } from "@/lib/validators";
 import { apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 import { slugify, getPaginationParams, buildPaginationMeta, escapeRegex } from "@/lib/utils";
