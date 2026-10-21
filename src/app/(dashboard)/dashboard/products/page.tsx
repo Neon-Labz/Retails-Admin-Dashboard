@@ -42,6 +42,7 @@ interface ProductRow {
   _id: string;
   name: string;
   sku: string;
+  weight?: number;
   category: { _id: string; name: string } | null;
   subcategory?: string;
   price: number;
@@ -65,6 +66,7 @@ const emptyForm = {
   price: "",
   salePrice: "",
   sku: "",
+  weight: "",
   image: "",
   specifications: [{ key: "", value: "" }] as Specification[],
   tags: "",
@@ -195,6 +197,7 @@ export default function ProductsPage() {
       price: String(product.price),
       salePrice: product.salePrice ? String(product.salePrice) : "",
       sku: product.sku,
+      weight: product.weight !== undefined && product.weight !== null ? String(product.weight) : "",
       image: product.images?.[0] || "",
       specifications:
         product.specifications && product.specifications.length > 0
@@ -215,7 +218,6 @@ export default function ProductsPage() {
     if (!form.sku.trim()) errs.sku = "SKU / Product code is required";
     if (!form.image) errs.image = "Product image is required";
     if (!form.category) errs.category = "Category is required";
-    if (!form.subcategory.trim()) errs.subcategory = "Subcategory is required";
     if (!form.status) errs.status = "Status is required";
 
     if (!form.price.trim()) {
@@ -225,6 +227,11 @@ export default function ProductsPage() {
     }
     if (form.salePrice.trim() !== "" && (isNaN(Number(form.salePrice)) || Number(form.salePrice) < 0)) {
       errs.salePrice = "Sale price must be a positive number";
+    }
+    if (!form.weight.trim()) {
+      errs.weight = "Weight is required";
+    } else if (isNaN(Number(form.weight)) || Number(form.weight) < 0) {
+      errs.weight = "Weight must be 0 or more";
     }
     if (!form.stock.trim()) {
       errs.stock = "Stock quantity is required";
@@ -252,6 +259,7 @@ export default function ProductsPage() {
         price: Number(form.price),
         salePrice: form.salePrice ? Number(form.salePrice) : null,
         sku: form.sku.trim(),
+        weight: Number(form.weight),
         images: form.image ? [form.image] : [],
         specifications: form.specifications.filter((s) => s.key.trim() && s.value.trim()),
         tags: form.tags
@@ -325,27 +333,37 @@ export default function ProductsPage() {
       {
         header: "Product",
         key: "name",
+        className: "max-w-[200px] w-[200px]",
         render: (p) => (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 max-w-[200px]">
             {p.images?.[0] ? (
-              <Image src={p.images[0]} alt={p.name} width={40} height={40} unoptimized className="h-10 w-10 rounded-lg border border-slate-200 object-cover" />
+              <Image src={p.images[0]} alt={p.name} width={40} height={40} unoptimized className="h-10 w-10 shrink-0 rounded-lg border border-slate-200 object-cover" />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
                 <Package className="h-5 w-5" />
               </div>
             )}
-            <div className="min-w-0">
-              <p className="flex items-center gap-1.5 truncate font-medium text-slate-800">
-                {p.name}
-                {p.isFeatured && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />}
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 truncate font-medium text-slate-800 text-sm" title={p.name}>
+                <span className="truncate">{p.name}</span>
+                {p.isFeatured && <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />}
               </p>
-              <p className="text-xs text-slate-400">{p.sku}</p>
+              <p className="text-xs text-slate-400 font-mono truncate">{p.sku}</p>
             </div>
           </div>
         ),
       },
       { header: "Category", key: "category", render: (p) => p.category?.name || "-" },
       { header: "Subcategory", key: "subcategory", render: (p) => p.subcategory || "-" },
+      {
+        header: "Weight",
+        key: "weight",
+        render: (p) => (
+          <span className="font-medium text-slate-700">
+            {p.weight !== undefined && p.weight !== null ? `${p.weight} g` : "-"}
+          </span>
+        ),
+      },
       {
         header: "Price",
         key: "price",
@@ -690,12 +708,12 @@ export default function ProductsPage() {
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className={cn("text-sm font-semibold", fieldErrors.subcategory ? "text-rose-600" : "text-slate-800")}>
-                  Subcategory <span className="text-rose-500 font-bold">*</span>
+                  Subcategory
                 </label>
+                <span className="text-xs text-slate-400 font-medium">Optional</span>
               </div>
               <div className="relative">
                 <select
-                  required
                   value={form.subcategory}
                   onChange={(e) => {
                     setForm((f) => ({ ...f, subcategory: e.target.value }));
@@ -708,7 +726,7 @@ export default function ProductsPage() {
                       : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
                   )}
                 >
-                  <option value="">Select subcategory</option>
+                  <option value="">Select subcategory (optional)</option>
                   {formSubcategories.map((s, idx) => (
                     <option key={s._id || idx} value={s.name}>
                       {s.name}
@@ -776,11 +794,11 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className={cn("text-sm font-semibold", fieldErrors.price ? "text-rose-600" : "text-slate-800")}>
-                  Price <span className="text-rose-500 font-bold">*</span>
+                  Price (LKR) <span className="text-rose-500 font-bold">*</span>
                 </label>
               </div>
               <input
@@ -811,7 +829,7 @@ export default function ProductsPage() {
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className={cn("text-sm font-semibold", fieldErrors.salePrice ? "text-rose-600" : "text-slate-800")}>
-                  Sale price
+                  Sale price (LKR)
                 </label>
                 <span className="text-xs text-slate-400 font-medium">Optional</span>
               </div>
@@ -839,6 +857,39 @@ export default function ProductsPage() {
               )}
             </div>
 
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className={cn("text-sm font-semibold", fieldErrors.weight ? "text-rose-600" : "text-slate-800")}>
+                  Weight (g) <span className="text-rose-500 font-bold">*</span>
+                </label>
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                required
+                value={form.weight}
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, weight: e.target.value }));
+                  clearFieldError("weight");
+                }}
+                placeholder="e.g. 500"
+                className={cn(
+                  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs",
+                  fieldErrors.weight
+                    ? "border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 bg-rose-50/20"
+                    : "border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand"
+                )}
+              />
+              {fieldErrors.weight && (
+                <p className="mt-1.5 text-xs font-medium text-rose-500">
+                  {fieldErrors.weight}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className={cn("text-sm font-semibold", fieldErrors.stock ? "text-rose-600" : "text-slate-800")}>

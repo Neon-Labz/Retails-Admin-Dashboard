@@ -6,7 +6,7 @@ import { Customer } from "@/models/Customer";
 import { Payment } from "@/models/Payment";
 import { createOrderSchema } from "@/lib/validators";
 import { apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
-import { getPaginationParams, buildPaginationMeta, generateOrderNumber, formatCurrency } from "@/lib/utils";
+import { getPaginationParams, buildPaginationMeta, generateOrderNumber, formatCurrency, escapeRegex } from "@/lib/utils";
 import { notifyNewOrder, notifyLowStock } from "@/lib/notify";
 import { type OrderStatus, type PaymentStatus, type PaymentRecordStatus } from "@/lib/constants";
 
@@ -33,10 +33,11 @@ export async function GET(request: NextRequest) {
 
     const filter: Record<string, unknown> = {};
     if (search) {
+      const escaped = escapeRegex(search);
       filter.$or = [
-        { orderNumber: { $regex: search, $options: "i" } },
-        { "customerSnapshot.name": { $regex: search, $options: "i" } },
-        { "customerSnapshot.email": { $regex: search, $options: "i" } },
+        { orderNumber: { $regex: escaped, $options: "i" } },
+        { "customerSnapshot.name": { $regex: escaped, $options: "i" } },
+        { "customerSnapshot.email": { $regex: escaped, $options: "i" } },
       ];
     }
     if (status) filter.status = status;
