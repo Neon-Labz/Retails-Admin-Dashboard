@@ -523,7 +523,7 @@ async function seed20Products() {
       tags: item.tags,
       stock: item.stock,
       lowStockThreshold: 5,
-      status: "active",
+      status: "active" as const,
       isFeatured: item.isFeatured,
       totalSold: Math.floor(Math.random() * 45) + 5,
     };
