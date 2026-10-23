@@ -80,7 +80,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     let finalStatus = status;
     const effectivePayment = finalPaymentStatus || order.paymentStatus;
-    if (effectivePayment === "pending" && (!finalStatus || finalStatus === "pending")) {
+    if (effectivePayment === "pending" && !finalStatus) {
       finalStatus = "processing";
     }
 
@@ -119,7 +119,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       );
     }
 
-    await order.save();
+    await order.save({ validateModifiedOnly: true });
 
     if (finalStatus) {
       await notifyOrderStatusChange(order.orderNumber, finalStatus, order.customerSnapshot.email, order.customerSnapshot.name);

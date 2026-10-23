@@ -13,14 +13,14 @@ export async function GET(request: NextRequest) {
       searchParams.get("unreadOnly") === "true" || searchParams.get("unread") === "true";
     const { page, limit, skip } = getPaginationParams(searchParams);
 
-    const filter: Record<string, unknown> = {};
-    if (type) filter.type = type;
+    const filter: Record<string, unknown> = { type: { $ne: "order_status" } };
+    if (type && type !== "order_status") filter.type = type;
     if (unreadOnly) filter.isRead = false;
 
     const [notifications, total, unreadCount] = await Promise.all([
       Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
       Notification.countDocuments(filter),
-      Notification.countDocuments({ isRead: false }),
+      Notification.countDocuments({ isRead: false, type: { $ne: "order_status" } }),
     ]);
 
     return apiSuccess({

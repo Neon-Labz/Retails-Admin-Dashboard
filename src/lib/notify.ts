@@ -98,14 +98,6 @@ export async function notifyNewCustomer(name: string, email: string) {
 }
 
 export async function notifyOrderStatusChange(orderNumber: string, status: string, customerEmail: string, customerName: string) {
-  await createNotification({
-    type: "order_status",
-    title: "Order status updated",
-    message: `Order ${orderNumber} status changed to ${status}.`,
-    relatedType: "order",
-    link: "/dashboard/orders",
-  });
-
   const settings = await getStoreSettings();
   if (settings.emailSettings?.orderStatusUpdates && customerEmail) {
     await sendEmail({
