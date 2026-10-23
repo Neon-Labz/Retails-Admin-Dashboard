@@ -43,6 +43,9 @@ export const NOTIFICATION_TYPES = [
   "out_of_stock",
   "payment_update",
   "order_status",
+  "order_delivered",
+  "order_update",
+  "general",
   "system",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

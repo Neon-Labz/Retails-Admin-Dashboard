@@ -122,7 +122,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     await order.save({ validateModifiedOnly: true });
 
     if (finalStatus) {
-      await notifyOrderStatusChange(order.orderNumber, finalStatus, order.customerSnapshot.email, order.customerSnapshot.name);
+      await notifyOrderStatusChange(
+        order.orderNumber,
+        finalStatus,
+        order.customerSnapshot?.email || "",
+        order.customerSnapshot?.name || "Customer",
+        order._id.toString()
+      );
     }
 
     return apiSuccess(order, "Order updated successfully");

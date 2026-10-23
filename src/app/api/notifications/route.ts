@@ -13,18 +13,41 @@ export async function GET(request: NextRequest) {
       searchParams.get("unreadOnly") === "true" || searchParams.get("unread") === "true";
     const { page, limit, skip } = getPaginationParams(searchParams);
 
-    const filter: Record<string, unknown> = { type: { $ne: "order_status" } };
-    if (type && type !== "order_status") filter.type = type;
-    if (unreadOnly) filter.isRead = false;
+    const filter: Record<string, unknown> = {};
+    if (type) filter.type = type;
+
+    // Match both isRead: false and legacy read: false / missing flags
+    const unreadCondition = {
+      $or: [
+        { isRead: false },
+        { isRead: { $exists: false }, read: { $ne: true } },
+        { isRead: null, read: { $ne: true } },
+        { read: false },
+      ],
+    };
+
+    if (unreadOnly) {
+      filter.$and = [unreadCondition];
+    }
+
+    const unreadCountFilter: Record<string, unknown> = { ...unreadCondition };
+    if (type) {
+      unreadCountFilter.type = type;
+    }
 
     const [notifications, total, unreadCount] = await Promise.all([
-      Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       Notification.countDocuments(filter),
-      Notification.countDocuments({ isRead: false, type: { $ne: "order_status" } }),
+      Notification.countDocuments(unreadCountFilter),
     ]);
 
+    const normalized = (notifications as unknown as Array<Record<string, unknown>>).map((n) => ({
+      ...n,
+      isRead: Boolean(n.isRead === true || (n.isRead === undefined && n.read === true)),
+    }));
+
     return apiSuccess({
-      notifications,
+      notifications: normalized,
       meta: buildPaginationMeta(total, page, limit),
       unreadCount,
     });
@@ -36,10 +59,20 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     await connectDB();
-    const { action } = await request.json();
-    if (action === "mark-all-read") {
-      await Notification.updateMany({ isRead: false }, { isRead: true });
-      return apiSuccess(null, "All notifications marked as read");
+    let action = "mark-all-read";
+    try {
+      const body = await request.json();
+      if (body && body.action) action = body.action;
+    } catch {
+      // Default to mark-all-read if no body passed
+    }
+
+    if (action === "mark-all-read" || action === "mark_all_read") {
+      const result = await Notification.updateMany(
+        {},
+        { $set: { isRead: true, read: true } }
+      );
+      return apiSuccess({ modifiedCount: result.modifiedCount }, "All notifications marked as read");
     }
     return apiSuccess(null, "No action taken");
   } catch (err) {

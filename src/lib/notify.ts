@@ -11,7 +11,11 @@ export async function createNotification(input: {
   relatedType?: string;
   link?: string;
 }) {
-  return Notification.create(input);
+  return Notification.create({
+    ...input,
+    isRead: false,
+    read: false,
+  });
 }
 
 export async function getStoreSettings() {
@@ -97,13 +101,29 @@ export async function notifyNewCustomer(name: string, email: string) {
   }
 }
 
-export async function notifyOrderStatusChange(orderNumber: string, status: string, customerEmail: string, customerName: string) {
+export async function notifyOrderStatusChange(
+  orderNumber: string,
+  status: string,
+  customerEmail?: string,
+  customerName?: string,
+  orderId?: string
+) {
+  const cleanOrderNumber = orderNumber.replace(/^#/, "");
+  await createNotification({
+    type: "order_status",
+    title: "Order status updated",
+    message: `Order #${cleanOrderNumber} status changed to ${status}.`,
+    relatedId: orderId || "",
+    relatedType: "order",
+    link: "/dashboard/orders",
+  });
+
   const settings = await getStoreSettings();
   if (settings.emailSettings?.orderStatusUpdates && customerEmail) {
     await sendEmail({
       to: customerEmail,
-      subject: `Order ${orderNumber} status update`,
-      html: emailTemplates.orderStatusUpdate(orderNumber, status, customerName),
+      subject: `Order #${cleanOrderNumber} status update`,
+      html: emailTemplates.orderStatusUpdate(cleanOrderNumber, status, customerName || "Customer"),
     });
   }
 }
