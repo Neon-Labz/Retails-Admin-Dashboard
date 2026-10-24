@@ -17,7 +17,7 @@ import {
 import { Button, Badge, Card } from "@/components/ui/primitives";
 import { DataTable, type Column, Pagination, SearchInput } from "@/components/ui/table";
 import { Modal, ConfirmDialog } from "@/components/ui/modal";
-import { ImageUpload } from "@/components/ui/image-upload";
+import { ImageUploader } from "@/components/ui/image-uploader";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 
@@ -67,7 +67,7 @@ const emptyForm = {
   salePrice: "",
   sku: "",
   weight: "",
-  image: "",
+  images: [] as string[],
   specifications: [{ key: "", value: "" }] as Specification[],
   tags: "",
   stock: "",
@@ -198,7 +198,7 @@ export default function ProductsPage() {
       salePrice: product.salePrice ? String(product.salePrice) : "",
       sku: product.sku,
       weight: product.weight !== undefined && product.weight !== null ? String(product.weight) : "",
-      image: product.images?.[0] || "",
+      images: Array.isArray(product.images) ? product.images : [],
       specifications:
         product.specifications && product.specifications.length > 0
           ? product.specifications
@@ -216,7 +216,11 @@ export default function ProductsPage() {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = "Product name is required";
     if (!form.sku.trim()) errs.sku = "SKU / Product code is required";
-    if (!form.image) errs.image = "Product image is required";
+    if (!form.images || form.images.length === 0) {
+      errs.images = "At least 1 product image is required (max 5)";
+    } else if (form.images.length > 5) {
+      errs.images = "You can add a maximum of 5 images";
+    }
     if (!form.category) errs.category = "Category is required";
     if (!form.status) errs.status = "Status is required";
 
@@ -260,7 +264,7 @@ export default function ProductsPage() {
         salePrice: form.salePrice ? Number(form.salePrice) : null,
         sku: form.sku.trim(),
         weight: Number(form.weight),
-        images: form.image ? [form.image] : [],
+        images: form.images && form.images.length > 0 ? form.images.slice(0, 5) : [],
         specifications: form.specifications.filter((s) => s.key.trim() && s.value.trim()),
         tags: form.tags
           ? form.tags
@@ -336,13 +340,23 @@ export default function ProductsPage() {
         className: "max-w-[200px] w-[200px]",
         render: (p) => (
           <div className="flex items-center gap-2.5 max-w-[200px]">
-            {p.images?.[0] ? (
-              <Image src={p.images[0]} alt={p.name} width={40} height={40} unoptimized className="h-10 w-10 shrink-0 rounded-lg border border-slate-200 object-cover" />
-            ) : (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
-                <Package className="h-5 w-5" />
-              </div>
-            )}
+            <div className="relative h-10 w-10 shrink-0">
+              {p.images?.[0] ? (
+                <Image src={p.images[0]} alt={p.name} width={40} height={40} unoptimized className="h-10 w-10 shrink-0 rounded-lg border border-slate-200 object-cover" />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+                  <Package className="h-5 w-5" />
+                </div>
+              )}
+              {p.images && p.images.length > 1 && (
+                <span
+                  title={`${p.images.length} images`}
+                  className="absolute -bottom-1 -right-1 rounded-full bg-slate-900/85 px-1 text-[9px] font-bold text-white shadow-xs backdrop-blur-xs border border-white"
+                >
+                  {p.images.length}
+                </span>
+              )}
+            </div>
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 truncate font-medium text-slate-800 text-sm" title={p.name}>
                 <span className="truncate">{p.name}</span>
@@ -651,19 +665,19 @@ export default function ProductsPage() {
           </div>
 
           <div>
-            <ImageUpload
-              label="Product Image"
+            <ImageUploader
+              label="Product Images"
               required
-              value={form.image}
-              error={fieldErrors.image}
-              onChange={(url) => {
-                setForm((f) => ({ ...f, image: url }));
-                clearFieldError("image");
+              images={form.images}
+              max={5}
+              error={fieldErrors.images}
+              onChange={(imgs) => {
+                setForm((f) => ({ ...f, images: imgs }));
+                clearFieldError("images");
               }}
               folder="products"
-              targetDimensions={{ width: 1200, height: 1600 }}
               badge="1200 × 1600 px"
-              hint="Auto-fitted to 1200 × 1600 px (3:4 Portrait) • Max 15MB"
+              hint="Upload 1 to 5 images • First image is used as the primary cover photo"
             />
           </div>
 
